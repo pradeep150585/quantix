@@ -1,0 +1,57 @@
+upstox:
+  access_token: "YOUR_ACCESS_TOKEN_HERE"
+  api_key: "YOUR_API_KEY_HERE"
+  api_secret: "YOUR_API_SECRET_HERE"
+  base_url: "https://api.upstox.com/v2"
+  websocket_url: "wss://api.upstox.com/v2/feed/market-data-feed"
+
+app:
+  name: "Nifty 200 Market Intelligence"
+  version: "1.0.0"
+  refresh_interval: 10      # dashboard refresh in seconds
+  scanner_refresh: 30       # strategy scanner refresh in seconds
+  news_refresh: 60          # news refresh in seconds
+  theme: "dark"
+  debug: false
+
+scanner:
+  min_match_score: 40
+  vcp_lookback: 20
+  rs_lookback: 63
+  volume_avg_period: 20
+  breakout_volume_multiplier: 1.5
+  rsi_period: 14
+  atr_period: 14
+  adx_period: 14
+
+alerts:
+  telegram_enabled: false
+  telegram_bot_token: "YOUR_BOT_TOKEN"
+  telegram_chat_id: "YOUR_CHAT_ID"
+  email_enabled: false
+  email_smtp: "smtp.gmail.com"
+  email_port: 587
+  email_user: "your@email.com"
+  email_password: "YOUR_PASSWORD"
+  min_score_alert: 75
+
+ai:
+  openai_api_key: "YOUR_OPENAI_KEY"
+  model: "gpt-4o-mini"
+  enabled: false
+
+database:
+  type: "sqlite"
+  sqlite_path: "database/nifty_scanner.db"
+  postgres_url: "postgresql://user:password@localhost:5432/nifty_scanner"
+
+logging:
+  level: "INFO"
+  rotation: "10 MB"
+  retention: "7 days"
+  path: "logs/app.log"
+
+cache:
+  redis_enabled: false
+  redis_url: "redis://localhost:6379"
+  ttl: 30

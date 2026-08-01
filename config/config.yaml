@@ -1,0 +1,51 @@
+ai:
+  enabled: true
+  model: gpt-4o-mini
+  openai_api_key: YOUR_OPENAI_KEY
+alerts:
+  email_enabled: false
+  email_password: YOUR_PASSWORD
+  email_port: 587
+  email_smtp: smtp.gmail.com
+  email_user: your@email.com
+  min_score_alert: 75
+  telegram_bot_token: YOUR_BOT_TOKEN
+  telegram_chat_id: YOUR_CHAT_ID
+  telegram_enabled: false
+app:
+  debug: false
+  name: Nifty 200 Market Intelligence
+  news_refresh: 60
+  refresh_interval: 10
+  scanner_refresh: 30
+  theme: dark
+  version: 1.0.0
+cache:
+  redis_enabled: false
+  redis_url: redis://localhost:6379
+  ttl: 30
+database:
+  postgres_url: postgresql://user:password@localhost:5432/nifty_scanner
+  sqlite_path: database/nifty_scanner.db
+  type: sqlite
+logging:
+  level: INFO
+  path: logs/app.log
+  retention: 7 days
+  rotation: 10 MB
+scanner:
+  adx_period: 14
+  atr_period: 14
+  breakout_volume_multiplier: 1.5
+  min_match_score: 40
+  rs_lookback: 63
+  rsi_period: 14
+  vcp_lookback: 20
+  volume_avg_period: 20
+upstox:
+  access_token: eyJ0eXAiOiJKV1QiLCJrZXlfaWQiOiJza192MS4wIiwiYWxnIjoiSFMyNTYifQ.eyJzdWIiOiIyNTIyMzYiLCJqdGkiOiI2YTZkZWEyNWRlMDA1ZDNiODhkN2MyNDIiLCJpc011bHRpQ2xpZW50IjpmYWxzZSwiaXNQbHVzUGxhbiI6dHJ1ZSwiaWF0IjoxNzg1NTg4MjYxLCJpc3MiOiJ1ZGFwaS1nYXRld2F5LXNlcnZpY2UiLCJleHAiOjE3ODU2MjE2MDB9.tSe8lVG47H4wQFSxk2Dg-nXtUktHhcFSNndlIVCdSEw
+  api_key: 89da1d78-9960-488f-a00a-eac96ba5cc9c
+  api_secret: 8dvhfo88e3
+  base_url: https://api.upstox.com/v2
+  redirect_uri: https://nifgo.streamlit.app/auth/callback
+  websocket_url: wss://api.upstox.com/v2/feed/market-data-feed
