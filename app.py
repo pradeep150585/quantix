@@ -1,10 +1,10 @@
 """
 Quantix – Nifty 200 Market Intelligence Platform
 """
-import streamlit as st
-from database import init_db
-from utils.logger import setup_logger
+import sys
+import traceback
 import time
+import streamlit as st
 
 st.set_page_config(
     page_title="Quantix – Market Intelligence",
@@ -13,8 +13,15 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-setup_logger()
-init_db()
+try:
+    from database import init_db
+    from utils.logger import setup_logger
+    setup_logger()
+    init_db()
+except Exception as _boot_err:
+    st.error(f"**Boot error:** {_boot_err}")
+    st.code(traceback.format_exc())
+    st.stop()
 
 if "app_start_time" not in st.session_state:
     st.session_state.app_start_time = time.time()
