@@ -163,7 +163,7 @@ def parse_quote(raw: dict) -> dict:
     ohlc = raw.get("ohlc", {})
     ltp = raw.get("last_price", 0)
     net_change = raw.get("net_change", 0)
-    prev_close = ohlc.get("close") or round(ltp - net_change, 2) if ltp else 0
+    prev_close = round(ltp - net_change, 2) if net_change else (ohlc.get("close") or raw.get("close_price", 0))
     return {
         "ltp": ltp,
         "open": ohlc.get("open", 0),

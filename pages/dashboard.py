@@ -153,7 +153,9 @@ async function refresh() {{
     }}
     const m = {{}};
     for (const [k, v] of Object.entries(json.data)) {{
-      const obj = {{ ltp: v.last_price || 0, prev: v.ohlc?.close || ((v.last_price || 0) - (v.net_change || 0)) }};
+      const ltp = v.last_price || 0;
+      const prev = v.net_change ? (ltp - v.net_change) : (v.ohlc?.close || 0);
+      const obj = {{ ltp, prev }};
       [k, k.replace(/:/g,'|'), k.replace(/\\|/g,':')].forEach(x => m[x] = obj);
       if (v.instrument_token) [v.instrument_token, v.instrument_token.replace(/:/g,'|')].forEach(x => m[x] = obj);
     }}
