@@ -235,7 +235,8 @@ async function refresh() {{
         return;
       }}
       for (const [k, v] of Object.entries(j.data)) {{
-        const obj = {{ ltp: v.last_price || 0, prev: (v.last_price || 0) - (v.net_change || 0), tbq: v.total_buy_quantity || 0, tsq: v.total_sell_quantity || 0, vol: v.volume || 0 }};
+        const prev = v.ohlc?.close || ((v.last_price || 0) - (v.net_change || 0));
+        const obj = {{ ltp: v.last_price || 0, prev, tbq: v.total_buy_quantity || 0, tsq: v.total_sell_quantity || 0, vol: v.volume || 0 }};
         [k, k.replace(/:/g,'|'), k.replace(/\\|/g,':')].forEach(x => m[x] = obj);
         if (v.instrument_token) [v.instrument_token, v.instrument_token.replace(/:/g,'|')].forEach(x => m[x] = obj);
       }}

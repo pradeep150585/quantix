@@ -163,8 +163,7 @@ def parse_quote(raw: dict) -> dict:
     ohlc = raw.get("ohlc", {})
     ltp = raw.get("last_price", 0)
     net_change = raw.get("net_change", 0)
-    # Derive prev_close from net_change (most reliable across market hours/post-market)
-    prev_close = round(ltp - net_change, 2) if ltp and net_change else ohlc.get("close", 0) or raw.get("close_price", 0)
+    prev_close = ohlc.get("close") or round(ltp - net_change, 2) if ltp else 0
     return {
         "ltp": ltp,
         "open": ohlc.get("open", 0),
@@ -176,9 +175,8 @@ def parse_quote(raw: dict) -> dict:
         "avg_price": raw.get("average_price", 0),
         "bid": buy_orders[0].get("price", 0) if buy_orders else 0,
         "ask": sell_orders[0].get("price", 0) if sell_orders else 0,
-        # Use top-level totals (accurate) — depth rows only show top 5 levels
-        "tbq": raw.get("total_buy_quantity", sum(o.get("quantity", 0) for o in buy_orders)),
-        "tsq": raw.get("total_sell_quantity", sum(o.get("quantity", 0) for o in sell_orders)),
+        "tbq": raw.get("total_buy_quantity") or sum(o.get("quantity", 0) for o in buy_orders),
+        "tsq": raw.get("total_sell_quantity") or sum(o.get("quantity", 0) for o in sell_orders),
         "upper_circuit": raw.get("upper_circuit_limit", 0),
         "lower_circuit": raw.get("lower_circuit_limit", 0),
         "net_change": net_change,
