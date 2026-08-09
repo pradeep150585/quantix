@@ -3,6 +3,7 @@ Page 5 – AI Top Picks (VCP Scanner)
 """
 import asyncio
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -242,40 +243,46 @@ def _render_card(row: pd.Series, rank: int, chart_store: dict):
     )
 
     with st.expander(f"#{rank}  {symbol}  ·  ₹{cmp:,.2f}  {pct_arr}{abs(pct):.2f}%  —  VCP {score:.0f}", expanded=False):
-        st.markdown(f"""
-<div style="background:{_CARD};border:1px solid {'#00c853' if is_bo else _BORDER};
-    border-radius:5px;padding:14px 16px;margin-bottom:8px;border-left:3px solid {score_c};">
+        components.html(f"""
+<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}}</style>
+</head><body style="background:#131722;padding:12px 14px;border-radius:5px;">
+<div style="border:1px solid {'#00c853' if is_bo else '#1e2433'};
+    border-radius:5px;padding:14px 16px;border-left:3px solid {score_c};
+    background:#131722;">
   <div style="display:flex;align-items:center;gap:12px;">
     <div style="flex:1;min-width:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:.95rem;font-weight:700;color:{_WHITE};">{symbol}</span>
+          <span style="font-size:.95rem;font-weight:700;color:#ffffff;">{symbol}</span>
           {bo_tag}
         </div>
-        <span style="font-size:1rem;font-weight:700;color:{_TEXT};">₹{cmp:,.2f}
+        <span style="font-size:1rem;font-weight:700;color:#d1d4dc;">₹{cmp:,.2f}
           <span style="font-size:.72rem;color:{pct_color};font-weight:600;margin-left:4px;">{pct_arr} {abs(pct):.2f}%</span>
         </span>
       </div>
-      <div style="font-size:.7rem;color:{_MUTED};margin-top:2px;">{row.get('company_name','')} · {row.get('sector','')}</div>
+      <div style="font-size:.7rem;color:#6b7280;margin-top:2px;">{row.get('company_name','')} · {row.get('sector','')}</div>
       <div style="display:flex;gap:14px;margin-top:5px;font-size:.7rem;flex-wrap:wrap;">
-        <span style="color:{_MUTED};">Contractions <b style="color:{_TEXT};">{n_cont}</b></span>
-        <span style="color:{_MUTED};">Pivot <b style="color:{_TEXT};">₹{pivot:,.2f}</b></span>
-        <span style="color:{_MUTED};">Vol <b style="color:{_TEXT};">{vr:.2f}x</b></span>
-        <span style="color:{_MUTED};">52W Hi <b style="color:{_TEXT};">{row.get('dist_52h_pct',0):.1f}%</b></span>
-        <span style="color:{_MUTED};">ATR <b style="color:{_TEXT};">{row.get('atr',0):.2f}</b></span>
+        <span style="color:#6b7280;">Contractions <b style="color:#d1d4dc;">{n_cont}</b></span>
+        <span style="color:#6b7280;">Pivot <b style="color:#d1d4dc;">₹{pivot:,.2f}</b></span>
+        <span style="color:#6b7280;">Vol <b style="color:#d1d4dc;">{vr:.2f}x</b></span>
+        <span style="color:#6b7280;">52W Hi <b style="color:#d1d4dc;">{row.get('dist_52h_pct',0):.1f}%</b></span>
+        <span style="color:#6b7280;">ATR <b style="color:#d1d4dc;">{row.get('atr',0):.2f}</b></span>
       </div>
-      <div style="font-size:.67rem;color:{_MUTED};margin-top:3px;">
-        Contractions: <span style="color:{_TEXT};">{cont_str}</span>
+      <div style="font-size:.67rem;color:#6b7280;margin-top:3px;">
+        Contractions: <span style="color:#d1d4dc;">{cont_str}</span>
       </div>
       <div style="margin-top:5px;">{badges_html}</div>
     </div>
     <div style="text-align:center;min-width:58px;background:#1e2433;border-radius:5px;padding:9px 6px;">
       <div style="font-size:1.35rem;font-weight:800;color:{score_c};">{score:.0f}</div>
-      <div style="font-size:.56rem;color:{_MUTED};letter-spacing:.05em;text-transform:uppercase;">VCP</div>
+      <div style="font-size:.56rem;color:#6b7280;letter-spacing:.05em;text-transform:uppercase;">VCP</div>
     </div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+</body></html>
+""", height=160, scrolling=False)
         chart_data = chart_store.get(symbol)
         if chart_data is None or chart_data["df"].empty:
             st.info("Chart data not available.")
