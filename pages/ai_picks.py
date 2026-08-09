@@ -241,14 +241,11 @@ def _render_card(row: pd.Series, rank: int, chart_store: dict):
         if is_bo else ""
     )
 
-    st.markdown(f"""
+    with st.expander(f"#{rank}  {symbol}  ·  ₹{cmp:,.2f}  {pct_arr}{abs(pct):.2f}%  —  VCP {score:.0f}", expanded=False):
+        st.markdown(f"""
 <div style="background:{_CARD};border:1px solid {'#00c853' if is_bo else _BORDER};
-    border-radius:5px;padding:14px 16px;margin-bottom:2px;border-left:3px solid {score_c};">
+    border-radius:5px;padding:14px 16px;margin-bottom:8px;border-left:3px solid {score_c};">
   <div style="display:flex;align-items:center;gap:12px;">
-    <div style="font-size:1rem;font-weight:800;color:{_MUTED};min-width:28px;
-        text-align:center;background:#1e2433;border-radius:4px;padding:5px 0;">
-      #{rank}
-    </div>
     <div style="flex:1;min-width:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -256,14 +253,10 @@ def _render_card(row: pd.Series, rank: int, chart_store: dict):
           {bo_tag}
         </div>
         <span style="font-size:1rem;font-weight:700;color:{_TEXT};">₹{cmp:,.2f}
-          <span style="font-size:.72rem;color:{pct_color};font-weight:600;margin-left:4px;">
-            {pct_arr} {abs(pct):.2f}%
-          </span>
+          <span style="font-size:.72rem;color:{pct_color};font-weight:600;margin-left:4px;">{pct_arr} {abs(pct):.2f}%</span>
         </span>
       </div>
-      <div style="font-size:.7rem;color:{_MUTED};margin-top:2px;">
-        {row.get('company_name','')} · {row.get('sector','')}
-      </div>
+      <div style="font-size:.7rem;color:{_MUTED};margin-top:2px;">{row.get('company_name','')} · {row.get('sector','')}</div>
       <div style="display:flex;gap:14px;margin-top:5px;font-size:.7rem;flex-wrap:wrap;">
         <span style="color:{_MUTED};">Contractions <b style="color:{_TEXT};">{n_cont}</b></span>
         <span style="color:{_MUTED};">Pivot <b style="color:{_TEXT};">₹{pivot:,.2f}</b></span>
@@ -283,9 +276,6 @@ def _render_card(row: pd.Series, rank: int, chart_store: dict):
   </div>
 </div>
 """, unsafe_allow_html=True)
-
-    # Expandable chart
-    with st.expander(f"📈 {symbol} — View VCP Chart", expanded=False):
         chart_data = chart_store.get(symbol)
         if chart_data is None or chart_data["df"].empty:
             st.info("Chart data not available.")
