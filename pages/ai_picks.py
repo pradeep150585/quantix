@@ -37,12 +37,9 @@ def _score_color(s: float) -> str:
 # -- VCP table ----------------------------------------------------------------
 
 def _build_vcp_table_html(df: pd.DataFrame) -> str:
-    headers = ["#", "Symbol", "Company", "Sector", "Score", "CMP", "Entry", "Pivot",
-               "Stop", "Chg%", "Vol Ratio", "52W Hi%", "Pattern"]
+    headers = ["#", "Symbol", "Score", "CMP", "Entry", "Stop", "Vol", "52W%"]
     th = "".join(
-        f'<th style="position:sticky;top:0;background:#131722;color:#9ca3af;'
-        f'font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;'
-        f'padding:10px 10px;white-space:nowrap;border-bottom:1px solid #1e2433;z-index:2;">{h}</th>'
+        f'<th style="background:#131722;color:#9ca3af;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:8px 6px;border-bottom:1px solid #1e2433;">{h}</th>'
         for h in headers
     )
     rows_html = ""
@@ -50,54 +47,40 @@ def _build_vcp_table_html(df: pd.DataFrame) -> str:
         score   = row.get("vcp_score", 0)
         score_c = _score_color(score)
         is_bo   = row.get("is_breakout", False)
-        pct     = row.get("pct_change", 0)
-        pct_c   = _GREEN if pct > 0 else (_RED if pct < 0 else _MUTED)
-        pct_arr = "▲" if pct > 0 else ("▼" if pct < 0 else "—")
         pivot   = row.get("pivot", 0)
         entry   = row.get("entry_price", pivot if pivot > 0 else row.get("cmp", 0))
         stop    = row.get("stop_loss", 0)
         vr      = row.get("volume_ratio", 0)
-        vr_c    = _GREEN if vr >= 1.5 else (_YELLOW if vr >= 1.0 else _MUTED)
         d52     = row.get("dist_52h_pct", 0)
-        d52_c   = _GREEN if d52 >= -5 else _MUTED
-        cont_pcts = row.get("contraction_pcts", [])
-        cont_str  = " > ".join(f"{c:.1f}%" for c in cont_pcts) if cont_pcts else "-"
         bg = "rgba(0,200,83,.06)" if is_bo else "transparent"
-        bo_badge = ('<span style="background:rgba(0,200,83,.12);color:#00c853;border:1px solid '
-                   'rgba(0,200,83,.3);border-radius:3px;padding:1px 5px;font-size:.58rem;'
-                   'font-weight:700;margin-left:4px;">BO</span>' if is_bo else "")
-        td = 'style="padding:9px 10px;border-bottom:1px solid #131722;white-space:nowrap;"'
+        bo_badge = '<span style="color:#00c853;font-weight:700;font-size:.55rem;">BO</span>' if is_bo else ""
+        td = 'style="padding:7px 6px;border-bottom:1px solid #131722;font-size:.7rem;"'
         cells = [
-            f'<td {td}><span style="color:#4a5568;font-size:.7rem;">{i+1}</span></td>',
-            f'<td {td}><span style="color:#fff;font-weight:600;font-size:.8rem;">{row.get("symbol","")}</span>{bo_badge}</td>',
-            f'<td {td}><span style="color:#9ca3af;font-size:.74rem;">{row.get("company_name","")[:26]}</span></td>',
-            f'<td {td}><span style="color:#6b7280;font-size:.72rem;">{row.get("sector","")}</span></td>',
+            f'<td {td}><span style="color:#4a5568;">{i+1}</span></td>',
+            f'<td {td}><span style="color:#fff;font-weight:600;">{row.get("symbol","")}</span> {bo_badge}</td>',
             f'<td {td}><span style="color:{score_c};font-weight:700;">{score:.0f}</span></td>',
-            f'<td {td}><span style="color:#d1d4dc;font-weight:500;">&#8377;{row.get("cmp",0):,.2f}</span></td>',
-            f'<td {td}><span style="color:#00c853;font-weight:700;">&#8377;{entry:,.2f}</span></td>',
-            f'<td {td}><span style="color:#d1d4dc;">&#8377;{pivot:,.2f}</span></td>',
-            f'<td {td}><span style="color:#ef4444;">&#8377;{stop:,.2f}</span></td>',
-            f'<td {td}><span style="color:{pct_c};font-weight:600;">{pct_arr} {abs(pct):.2f}%</span></td>',
-            f'<td {td}><span style="color:{vr_c};font-weight:600;">{vr:.2f}x</span></td>',
-            f'<td {td}><span style="color:{d52_c};font-weight:600;">{d52:.1f}%</span></td>',
-            f'<td {td}><span style="color:#6b7280;font-size:.7rem;">{cont_str}</span></td>',
+            f'<td {td}><span style="color:#d1d4dc;">&#8377;{row.get("cmp",0):,.0f}</span></td>',
+            f'<td {td}><span style="color:#00c853;font-weight:600;">&#8377;{entry:,.0f}</span></td>',
+            f'<td {td}><span style="color:#ef4444;">&#8377;{stop:,.0f}</span></td>',
+            f'<td {td}><span style="color:#d1d4dc;">{vr:.1f}x</span></td>',
+            f'<td {td}><span style="color:#d1d4dc;">{d52:.0f}%</span></td>',
         ]
         rows_html += f'<tr style="background:{bg};">{"".join(cells)}</tr>\n'
 
     return f"""<!DOCTYPE html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif}}
-.wrap{{width:100%;overflow-x:auto;overflow-y:auto;height:calc(100vh - 22px);border:1px solid #1e2433;border-radius:5px;background:#0b0e17}}
-table{{border-collapse:collapse;width:max-content;min-width:100%}}
-::-webkit-scrollbar{{width:4px;height:4px}}::-webkit-scrollbar-track{{background:#0b0e17}}
-::-webkit-scrollbar-thumb{{background:#2d3748;border-radius:4px}}
+table{{border-collapse:collapse;width:100%;table-layout:fixed}}
+::-webkit-scrollbar{{width:2px;height:2px}}
+::-webkit-scrollbar-track{{background:#0b0e17}}
+::-webkit-scrollbar-thumb{{background:#2d3748;border-radius:1px}}
 </style></head><body>
-<div class="wrap"><table>
+<table>
 <thead><tr>{th}</tr></thead>
 <tbody>{rows_html}</tbody>
-</table></div>
+</table>
 </body></html>"""
 
 
@@ -131,7 +114,7 @@ def _render_vcp():
     c3.metric("Near Pivot",       len(near_pivot))
     c4.metric("Avg VCP Score",    f"{avg_score:.1f}")
 
-    st.markdown("<div style='margin-bottom:12px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:8px;'></div>", unsafe_allow_html=True)
 
     # Sector summary as table
     if "sector" in df.columns and df["sector"].notna().any():
@@ -160,17 +143,17 @@ def _render_vcp():
         f"Near Pivot ({len(near_pivot)})",
     ])
     with t1:
-        components.html(_build_vcp_table_html(df.head(50)), height=600, scrolling=False)
+        components.html(_build_vcp_table_html(df.head(50)), height=500, scrolling=False)
     with t2:
         if breakouts.empty:
             st.info("No active breakouts right now.")
         else:
-            components.html(_build_vcp_table_html(breakouts.head(50)), height=600, scrolling=False)
+            components.html(_build_vcp_table_html(breakouts.head(50)), height=500, scrolling=False)
     with t3:
         if near_pivot.empty:
             st.info("No stocks near pivot right now.")
         else:
-            components.html(_build_vcp_table_html(near_pivot.head(50)), height=600, scrolling=False)
+            components.html(_build_vcp_table_html(near_pivot.head(50)), height=500, scrolling=False)
 
 
 # -- Page entry point ----------------------------------------------------------

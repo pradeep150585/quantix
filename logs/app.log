@@ -1987,3 +1987,43 @@
 2026-08-15 19:47:02.482 | INFO     | news:fetch_news:226 - Fetched 58 unique news items (deduplicated by company)
 2026-08-15 19:47:07.984 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
 2026-08-15 19:47:12.470 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 19:51:26.525 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-15 19:51:28.824 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-15 19:51:32.443 | INFO     | news:fetch_news:226 - Fetched 58 unique news items (deduplicated by company)
+2026-08-15 19:51:39.059 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 19:51:53.103 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 19:51:53.344 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 19:52:13.222 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 19:54:46.100 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 19:54:46.938 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 19:54:47.116 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 19:54:56.473 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 19:58:13.235 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-15 19:58:15.867 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-15 19:58:32.200 | INFO     | news:fetch_news:226 - Fetched 58 unique news items (deduplicated by company)
+2026-08-15 19:58:48.067 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 19:58:58.919 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 19:58:59.172 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 19:59:20.269 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 20:02:09.329 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-15 20:02:13.909 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-15 20:02:25.941 | INFO     | news:fetch_news:226 - Fetched 58 unique news items (deduplicated by company)
+2026-08-15 20:02:36.300 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:02:51.260 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 20:02:51.689 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:03:22.377 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 20:05:15.308 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-15 20:05:17.462 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-15 20:05:25.685 | INFO     | news:fetch_news:226 - Fetched 58 unique news items (deduplicated by company)
+2026-08-15 20:05:31.246 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:05:42.302 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 20:05:42.601 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:05:51.550 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:05:52.705 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 20:05:53.096 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:06:00.086 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:06:01.547 | INFO     | services.vcp_scanner:run_vcp_scan:306 - VCP scan: 20 setups from 200 stocks
+2026-08-15 20:06:01.787 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI1028","message":"Invalid interval","propertyPath":"getOHLC.interval","invalidValue":"day","error_code":"UDAPI1028","property_path":"getOHLC.interval","in
+2026-08-15 20:06:34.208 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 20:06:38.154 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks
+2026-08-15 20:06:40.157 | INFO     | services.elder_scanner:run_elder_scan:599 - Elder scan: 78 setups from 200 stocks

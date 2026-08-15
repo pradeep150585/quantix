@@ -1,5 +1,5 @@
 """
-Page 4 – Legendary Traders Strategy Scanner
+Page 4 – Legendary Traders Strategy Scanner (Lightweight)
 """
 import asyncio
 import io
@@ -16,14 +16,12 @@ _SCAN_KEY = "_strat_scan_df"
 _LAST_REFRESH_KEY = "_strat_last_refresh"
 _REFRESH_INTERVAL = 15
 
-
 def _run(coro):
     try:
         loop = asyncio.new_event_loop()
         return loop.run_until_complete(coro)
     finally:
         loop.close()
-
 
 def _run_scan_with_progress(ph) -> pd.DataFrame:
     from scanner import run_scan
@@ -71,80 +69,59 @@ def _run_scan_with_progress(ph) -> pd.DataFrame:
         raise scan_error[0]
     return scan_result[0] if scan_result[0] is not None else pd.DataFrame()
 
-
 @st.cache_data(ttl=15, show_spinner=False)
 def _refresh_prices(keys_tuple: tuple) -> dict:
     return _run(get_quotes(list(keys_tuple)))
 
-
 def _build_strategy_table_html(df: pd.DataFrame, ts: str) -> str:
-    headers = ["#", "Symbol", "Company", "Strategy", "Score", "CMP", "Entry", "Chg%",
-               "RSI", "Vol Ratio", "52W Hi%", "Stop Loss", "Sector"]
-
+    headers = ["#", "Symbol", "Score", "CMP", "Entry", "Chg%", "RSI", "52W%"]
     th = "".join(
-        f'<th style="position:sticky;top:0;background:#131722;color:#9ca3af;'
-        f'font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;'
-        f'padding:10px 10px;white-space:nowrap;border-bottom:1px solid #1e2433;z-index:2;">{h}</th>'
+        f'<th style="background:#131722;color:#9ca3af;font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:6px 4px;border-bottom:1px solid #1e2433;">{h}</th>'
         for h in headers
     )
-
     rows_html = ""
     for i, (_, row) in enumerate(df.iterrows()):
-        pct = row.get("pct_change", 0)
-        bg = "rgba(0,200,83,.05)" if pct > 0 else ("rgba(239,68,68,.05)" if pct < 0 else "transparent")
-        rsi = row.get("rsi", 0)
-        rsi_c = "#ef4444" if rsi >= 70 else ("#00c853" if rsi <= 30 else "#6b7280")
-        vr = row.get("volume_ratio", 0)
-        vr_c = "#f59e0b" if vr >= 2 else ("#00c853" if vr >= 1.2 else "#6b7280")
-        d52 = row.get("dist_52h_pct", 0)
-        d52_c = "#00c853" if d52 >= -5 else "#6b7280"
         score = row.get("best_score", 0)
         score_c = score_color(score)
-        strat = row.get("best_strategy", "")
-        sc = {"Minervini": "#60a5fa", "Qullamaggie": "#a78bfa", "Zanger": "#fbbf24"}.get(strat, "#6b7280")
+        rsi = row.get("rsi", 0)
+        rsi_c = "#ef4444" if rsi >= 70 else ("#00c853" if rsi <= 30 else "#6b7280")
+        d52 = row.get("dist_52h_pct", 0)
+        pct = row.get("pct_change", 0)
         pct_c = "#00c853" if pct > 0 else ("#ef4444" if pct < 0 else "#6b7280")
         pct_arr = "▲" if pct > 0 else ("▼" if pct < 0 else "—")
-
-        td = 'style="padding:9px 10px;border-bottom:1px solid #131722;white-space:nowrap;"'
+        td = 'style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.7rem;"'
         cells = [
-            f'<td {td}><span style="color:#4a5568;font-size:.7rem;">{i + 1}</span></td>',
-            f'<td {td}><span style="color:#ffffff;font-weight:600;font-size:.8rem;">{row.get("symbol","")}</span></td>',
-            f'<td {td}><span style="color:#9ca3af;font-size:.74rem;">{row.get("company_name","")[:28]}</span></td>',
-            f'<td {td}><span style="background:{sc}18;color:{sc};border:1px solid {sc}33;border-radius:3px;padding:2px 8px;font-size:.67rem;font-weight:600;">{strat}</span></td>',
-            f'<td {td}><span style="color:{score_c};font-weight:700;">{score:.1f}%</span></td>',
-            f'<td {td}><span style="color:#d1d4dc;font-weight:500;">&#8377;{row.get("cmp",0):,.2f}</span></td>',
-            f'<td {td}><span style="color:#00c853;font-weight:600;">&#8377;{row.get("entry_price", row.get("cmp",0)):,.2f}</span></td>',
-            f'<td {td}><span style="color:{pct_c};font-weight:600;">{pct_arr} {abs(pct):.2f}%</span></td>',
-            f'<td {td}><span style="color:{rsi_c};font-weight:600;">{rsi:.1f}</span></td>',
-            f'<td {td}><span style="color:{vr_c};font-weight:600;">{vr:.2f}x</span></td>',
-            f'<td {td}><span style="color:{d52_c};font-weight:600;">{d52:.1f}%</span></td>',
-            f'<td {td}><span style="color:#6b7280;">&#8377;{row.get("stop_loss",0):,.2f}</span></td>',
-            f'<td {td}><span style="color:#4a5568;font-size:.7rem;">{row.get("sector","")}</span></td>',
+            f'<td {td}><span style="color:#4a5568;">{i+1}</span></td>',
+            f'<td {td}><span style="color:#fff;font-weight:600;">{row.get("symbol","")}</span></td>',
+            f'<td {td}><span style="color:{score_c};font-weight:700;">{score:.0f}</span></td>',
+            f'<td {td}><span style="color:#d1d4dc;">₹{row.get("cmp",0):,.0f}</span></td>',
+            f'<td {td}><span style="color:#00c853;font-weight:600;">₹{row.get("entry_price", row.get("cmp",0)):,.0f}</span></td>',
+            f'<td {td}><span style="color:{pct_c};font-weight:600;">{pct_arr} {abs(pct):.1f}%</span></td>',
+            f'<td {td}><span style="color:{rsi_c};font-weight:600;">{rsi:.0f}</span></td>',
+            f'<td {td}><span style="color:#d1d4dc;">{d52:.0f}%</span></td>',
         ]
-        rows_html += f'<tr style="background:{bg};">{"".join(cells)}</tr>\n'
+        rows_html += f'<tr style="background:transparent;">{"".join(cells)}</tr>\n'
 
     return f"""<!DOCTYPE html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif}}
-.wrap{{width:100%;overflow-x:auto;overflow-y:auto;height:calc(100vh - 22px);border:1px solid #1e2433;border-radius:5px;background:#0b0e17}}
-table{{border-collapse:collapse;width:max-content;min-width:100%}}
-::-webkit-scrollbar{{width:4px;height:4px}}::-webkit-scrollbar-track{{background:#0b0e17}}
-::-webkit-scrollbar-thumb{{background:#2d3748;border-radius:4px}}
-.ts{{font-size:.6rem;color:#4a5568;text-align:right;padding:4px 0}}
+table{{border-collapse:collapse;width:100%;table-layout:fixed}}
+::-webkit-scrollbar{{width:2px;height:2px}}
+::-webkit-scrollbar-track{{background:#0b0e17}}
+::-webkit-scrollbar-thumb{{background:#2d3748;border-radius:1px}}
 </style></head><body>
-<div class="wrap"><table>
+<table>
 <thead><tr>{th}</tr></thead>
 <tbody>{rows_html}</tbody>
-</table></div>
-<div class="ts">Updated {ts} &middot; auto-refresh {_REFRESH_INTERVAL}s</div>
+</table>
+<div style="font-size:.55rem;color:#4a5568;padding:4px 4px;">Updated {ts} · auto-refresh {_REFRESH_INTERVAL}s</div>
 </body></html>"""
-
 
 def render(slot):
     slot.empty()
-    st.empty()  # Clear lingering components
+    st.empty()
     slot.markdown(_loading_html("Initialising scan &nbsp;&middot;&nbsp; 0 / 200 stocks"), unsafe_allow_html=True)
 
     if _SCAN_KEY not in st.session_state:
@@ -181,7 +158,7 @@ def render(slot):
             st.session_state[_SCAN_KEY] = df
         st.session_state[_LAST_REFRESH_KEY] = now
 
-    components.html(_build_strategy_table_html(df, time.strftime("%H:%M:%S")), height=620, scrolling=False)
+    components.html(_build_strategy_table_html(df, time.strftime("%H:%M:%S")), height=450, scrolling=False)
 
     col_x, col_y = st.columns(2)
     with col_x:

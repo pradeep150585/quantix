@@ -86,8 +86,7 @@ def _build_news_html(items) -> str:
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif;padding:4px 0}}
-::-webkit-scrollbar{{width:4px}}::-webkit-scrollbar-track{{background:#0b0e17}}
-::-webkit-scrollbar-thumb{{background:#2d3748;border-radius:4px}}
+::-webkit-scrollbar{{width:2px;height:2px}}
 </style></head><body>{cards}</body></html>"""
 
 
@@ -153,5 +152,5 @@ def render(slot):
         f' &nbsp; Stocks &amp; Gold only &middot; Deduplicated &middot; Strong signals first</div>',
         unsafe_allow_html=True,
     )
-    card_height = min(len(filtered) * 140 + 20, 820)
+    card_height = min(len(filtered) * 120 + 20, 600)
     components.html(_build_news_html(filtered), height=card_height, scrolling=True)

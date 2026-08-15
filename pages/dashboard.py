@@ -69,7 +69,7 @@ def _build_dashboard_html(quotes, indicators_map) -> str:
     all_keys = list(INDEX_KEYS.values())
 
     return f"""<!DOCTYPE html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
 body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif;padding:8px}}
@@ -215,4 +215,4 @@ def render(slot):
                 indicators_map[name] = (50, 0)
 
     slot.empty()
-    components.html(_build_dashboard_html(quotes, indicators_map), height=620, scrolling=True)
+    components.html(_build_dashboard_html(quotes, indicators_map), height=500, scrolling=True)

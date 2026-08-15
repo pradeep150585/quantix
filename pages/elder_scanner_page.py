@@ -216,14 +216,12 @@ def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
 
     fig.update_layout(
         paper_bgcolor=_BG, plot_bgcolor=_BG,
-        font=dict(color=_TEXT, size=10, family="Inter"),
-        margin=dict(l=0, r=70, t=24, b=0), height=560,
-        showlegend=True,
-        legend=dict(orientation="h", x=0, y=1.02,
-                    font=dict(size=9, color=_MUTED), bgcolor="rgba(0,0,0,0)"),
+        font=dict(color=_TEXT, size=9, family="Inter"),
+        margin=dict(l=0, r=50, t=20, b=0), height=400,
+        showlegend=False,
         xaxis_rangeslider_visible=False,
         title=dict(text=f"{symbol} - Elder Triple Screen",
-                   font=dict(size=12, color=_WHITE), x=0),
+                   font=dict(size=11, color=_WHITE), x=0),
     )
     ax = dict(gridcolor=_BORDER, zerolinecolor=_BORDER,
               tickfont=dict(color=_MUTED, size=9), showgrid=True)
@@ -322,8 +320,6 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
     c3.metric("A Setups",     len(a_grade))
     c4.metric("B Setups",     len(b_grade))
     c5.metric("Watchlist",    len(watch))
-
-    st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
 
     t_ap, t_a, t_b, t_w, t_all = st.tabs([
         f"A+ ({len(a_plus)})",
