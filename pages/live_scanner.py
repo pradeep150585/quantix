@@ -286,6 +286,7 @@ setInterval(refresh, 3000);
 
 def render(slot):
     slot.empty()
+    st.empty()  # Clear lingering components
     slot.markdown(loading_html("Loading live data…"), unsafe_allow_html=True)
 
     if _SYMBOLS_KEY not in st.session_state:
@@ -353,13 +354,26 @@ def render(slot):
         df = df[df["sector"] == sector_filter]
     df = df.sort_values("tbq_tsq", ascending=False).reset_index(drop=True)
 
-    col1, col2 = st.columns([1, 1])
+    col1, col2, col3 = st.columns([2, 2, 1])
     with col1:
         st.text_input("Search symbol / company", placeholder="e.g. RELIANCE", key="live_search")
     with col2:
         sector_vals = symbols_df["sector"].dropna().unique().tolist() if "sector" in symbols_df.columns else []
         sectors = ["All"] + sorted([s for s in sector_vals if s])
         st.selectbox("Sector", sectors, key="live_sector")
+    with col3:
+        sig_options = ["BUY & SELL", "BUY only", "SELL only", "All"]
+        sig_filter = st.selectbox("Signal", sig_options,
+                                  index=0, key="live_sig_filter")
+
+    if sig_filter == "BUY & SELL":
+        df = df[df["signal"].isin(["BUY", "SELL"])]
+    elif sig_filter == "BUY only":
+        df = df[df["signal"] == "BUY"]
+    elif sig_filter == "SELL only":
+        df = df[df["signal"] == "SELL"]
+
+    df = df.reset_index(drop=True)
 
     token = cfg_get("upstox.access_token", "")
     components.html(_build_table_html(df, time.strftime("%H:%M:%S"), token), height=640, scrolling=False)

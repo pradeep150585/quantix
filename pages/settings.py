@@ -34,6 +34,7 @@ def _save(cfg, config_path):
 
 def render(slot):
     slot.empty()
+    st.empty()  # Clear lingering components
     st.markdown(_SETTINGS_CSS, unsafe_allow_html=True)
 
     if not st.session_state.get("_settings_auth"):

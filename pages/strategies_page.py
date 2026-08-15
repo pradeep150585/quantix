@@ -9,11 +9,8 @@ import streamlit.components.v1 as components
 import pandas as pd
 from scanner import get_cached_scan
 from strategies import score_color
-from database import add_to_watchlist, remove_from_watchlist, is_in_watchlist
-from components import render_candlestick_chart
-from services.market_data import get_historical_df, get_quotes, parse_quote
-from indicators import compute_all
-from components.ui import page_heading, loading_html as _loading_html
+from services.market_data import get_quotes, parse_quote
+from components.ui import loading_html as _loading_html
 
 _SCAN_KEY = "_strat_scan_df"
 _LAST_REFRESH_KEY = "_strat_last_refresh"
@@ -81,7 +78,7 @@ def _refresh_prices(keys_tuple: tuple) -> dict:
 
 
 def _build_strategy_table_html(df: pd.DataFrame, ts: str) -> str:
-    headers = ["#", "Symbol", "Company", "Strategy", "Score", "CMP", "Chg%",
+    headers = ["#", "Symbol", "Company", "Strategy", "Score", "CMP", "Entry", "Chg%",
                "RSI", "Vol Ratio", "52W Hi%", "Stop Loss", "Sector"]
 
     th = "".join(
@@ -116,6 +113,7 @@ def _build_strategy_table_html(df: pd.DataFrame, ts: str) -> str:
             f'<td {td}><span style="background:{sc}18;color:{sc};border:1px solid {sc}33;border-radius:3px;padding:2px 8px;font-size:.67rem;font-weight:600;">{strat}</span></td>',
             f'<td {td}><span style="color:{score_c};font-weight:700;">{score:.1f}%</span></td>',
             f'<td {td}><span style="color:#d1d4dc;font-weight:500;">&#8377;{row.get("cmp",0):,.2f}</span></td>',
+            f'<td {td}><span style="color:#00c853;font-weight:600;">&#8377;{row.get("entry_price", row.get("cmp",0)):,.2f}</span></td>',
             f'<td {td}><span style="color:{pct_c};font-weight:600;">{pct_arr} {abs(pct):.2f}%</span></td>',
             f'<td {td}><span style="color:{rsi_c};font-weight:600;">{rsi:.1f}</span></td>',
             f'<td {td}><span style="color:{vr_c};font-weight:600;">{vr:.2f}x</span></td>',
@@ -146,6 +144,7 @@ table{{border-collapse:collapse;width:max-content;min-width:100%}}
 
 def render(slot):
     slot.empty()
+    st.empty()  # Clear lingering components
     slot.markdown(_loading_html("Initialising scan &nbsp;&middot;&nbsp; 0 / 200 stocks"), unsafe_allow_html=True)
 
     if _SCAN_KEY not in st.session_state:
@@ -195,38 +194,3 @@ def render(slot):
         df.drop(columns=["instrument_key", "badges"], errors="ignore").to_excel(buf, index=False, engine="openpyxl")
         st.download_button("Export Excel", buf.getvalue(), "strategy_scan.xlsx",
                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown('<div style="font-size:.78rem;font-weight:500;color:#6b7280;margin-bottom:8px;">Stock Detail</div>',
-                unsafe_allow_html=True)
-    selected = st.selectbox("Select stock", df["symbol"].tolist(), key="strat_chart_sel",
-                            label_visibility="collapsed")
-    if selected:
-        row = df[df["symbol"] == selected].iloc[0]
-        key = row.get("instrument_key", "")
-        c1, c2, c3, c4 = st.columns(4)
-        c1.metric("CMP", f"Rs.{row['cmp']:,.2f}", f"{row['pct_change']:+.2f}%")
-        c2.metric("Strategy", row["best_strategy"])
-        c3.metric("Score", f"{row['best_score']:.1f}%")
-        c4.metric("Stop Loss", f"Rs.{row['stop_loss']:,.2f}")
-
-        badges = row.get("badges", [])
-        if badges:
-            st.markdown(" ".join(f'<span class="badge badge-green">{b}</span>' for b in badges),
-                        unsafe_allow_html=True)
-
-        in_wl = is_in_watchlist(selected)
-        if in_wl:
-            if st.button(f"Remove {selected} from Watchlist"):
-                remove_from_watchlist(selected)
-                st.success(f"{selected} removed")
-        else:
-            if st.button(f"Add {selected} to Watchlist"):
-                add_to_watchlist(selected, row.get("company_name", ""), key)
-                st.success(f"{selected} added!")
-
-        if key:
-            with st.spinner("Loading chart..."):
-                hist_df = _run(get_historical_df(key, interval="day", days=260))
-                indicators = compute_all(hist_df) if not hist_df.empty else {}
-            render_candlestick_chart(hist_df, selected, indicators)

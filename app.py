@@ -39,6 +39,8 @@ PAGES = [
 
 if "page" not in st.session_state:
     st.session_state.page = "dashboard"
+if "_last_page" not in st.session_state:
+    st.session_state._last_page = None
 
 cache_buster = int(time.time() / 10)
 
@@ -378,11 +380,15 @@ for i, (label, key) in enumerate(PAGES):
 
 page_module = st.session_state.page
 
-# Single slot that holds ALL page content — replacing it clears old iframes too
-if "page_slot" not in st.session_state:
-    st.session_state.page_slot = None
-
+# Recreate page_slot each time to ensure clean state
 page_slot = st.empty()
+
+# Track page changes
+if st.session_state._last_page != page_module:
+    st.session_state._last_page = page_module
+    # Force Streamlit to clear all cached components
+    st.cache_data.clear()
+    st.cache_resource.clear()
 
 if page_module == "dashboard":
     from pages.dashboard import render

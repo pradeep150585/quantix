@@ -12,26 +12,71 @@ import httpx
 import feedparser
 from loguru import logger
 
-# Trusted financial RSS feeds
+# Trusted financial RSS feeds — focused on Indian company results & news
 RSS_FEEDS = [
-    ("Economic Times Markets", "https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms"),
-    ("Moneycontrol", "https://www.moneycontrol.com/rss/marketreports.xml"),
-    ("Business Standard Markets", "https://www.business-standard.com/rss/markets-106.rss"),
-    ("LiveMint Markets", "https://www.livemint.com/rss/markets"),
-    ("NDTV Profit", "https://feeds.feedburner.com/ndtvprofit-latest"),
-    ("Financial Express Markets", "https://www.financialexpress.com/market/feed/"),
+    ("ET Markets",          "https://economictimes.indiatimes.com/markets/stocks/rssfeeds/2146842.cms"),
+    ("ET Earnings",         "https://economictimes.indiatimes.com/markets/earnings/rssfeeds/2146843.cms"),
+    ("Moneycontrol News",   "https://www.moneycontrol.com/rss/results.xml"),
+    ("Moneycontrol Markets","https://www.moneycontrol.com/rss/marketreports.xml"),
+    ("BS Markets",          "https://www.business-standard.com/rss/markets-106.rss"),
+    ("BS Companies",        "https://www.business-standard.com/rss/companies-101.rss"),
+    ("LiveMint Markets",    "https://www.livemint.com/rss/markets"),
+    ("LiveMint Companies",  "https://www.livemint.com/rss/companies"),
+    ("Financial Express",   "https://www.financialexpress.com/market/feed/"),
 ]
 
 POSITIVE_WORDS = {
     "surge", "rally", "gain", "rise", "jump", "soar", "breakout", "bullish",
     "strong", "beat", "outperform", "upgrade", "buy", "positive", "growth",
     "profit", "record", "high", "boost", "momentum", "upside", "recovery",
+    "results", "earnings", "revenue", "dividend", "buyback", "acquisition",
+    "expansion", "order", "contract", "win", "launch", "approval",
 }
 NEGATIVE_WORDS = {
     "fall", "drop", "decline", "crash", "plunge", "bearish", "weak", "miss",
     "underperform", "downgrade", "sell", "negative", "loss", "low", "risk",
     "concern", "warning", "cut", "reduce", "pressure", "slump", "worry",
+    "fraud", "penalty", "fine", "probe", "investigation", "default", "debt",
+    "recall", "shutdown", "layoff", "resign", "exit",
 }
+
+# Keywords that indicate company-specific results/news (not macro)
+_COMPANY_NEWS_KEYWORDS = {
+    "results", "earnings", "profit", "revenue", "quarterly", "q1", "q2", "q3", "q4",
+    "dividend", "buyback", "acquisition", "merger", "order", "contract", "launch",
+    "approval", "ipo", "fpo", "rights", "bonus", "split", "board", "agm", "egm",
+    "management", "ceo", "cfo", "md", "chairman", "stake", "shareholding",
+    "guidance", "outlook", "forecast", "target", "upgrade", "downgrade",
+}
+
+# Exclude macro/index/forex/crypto news — only stocks and gold
+_EXCLUDE_KEYWORDS = {
+    "nifty", "sensex", "index", "market", "rbi", "rbi rate", "inflation", "gdp",
+    "rupee", "forex", "dollar", "currency", "bond", "yield", "ipo calendar",
+    "ipo listing", "crypto", "bitcoin", "ethereum", "nft", "mutual fund",
+    "etf", "commodity", "crude", "natural gas", "silver", "copper",
+}
+
+
+def _is_stock_or_gold_news(text: str) -> bool:
+    """True if article is about stocks or gold (not macro/forex/crypto)."""
+    text_lower = text.lower()
+    if any(kw in text_lower for kw in _EXCLUDE_KEYWORDS):
+        return False
+    if "gold" in text_lower:
+        return True
+    return _is_company_news(text, [])
+
+
+def _get_primary_company(companies: list[str], headline: str, summary: str) -> str:
+    """Extract the primary (first mentioned) company from the article."""
+    if not companies:
+        return ""
+    text = (headline + " " + summary).upper()
+    for company in companies:
+        if company in text:
+            return company
+    return companies[0] if companies else ""
 
 
 @dataclass
@@ -53,6 +98,14 @@ class NewsItem:
 _news_cache: list[NewsItem] = []
 _last_fetch: float = 0.0
 _FETCH_TTL = 60
+
+
+def _is_company_news(text: str, companies: list[str]) -> bool:
+    """True if article is about a specific Indian company (not pure macro)."""
+    if companies:  # already matched a Nifty 200 symbol
+        return True
+    text_lower = text.lower()
+    return any(kw in text_lower for kw in _COMPANY_NEWS_KEYWORDS)
 
 
 def _sentiment(text: str) -> tuple[str, float, float]:
@@ -141,6 +194,8 @@ async def fetch_news(symbols: list[str] = None) -> list[NewsItem]:
 
     all_items: list[NewsItem] = []
     seen_ids: set[str] = set()
+    seen_companies: dict[str, NewsItem] = {}  # Track latest news per company
+    
     for batch in results:
         if isinstance(batch, list):
             for item in batch:
@@ -148,14 +203,36 @@ async def fetch_news(symbols: list[str] = None) -> list[NewsItem]:
                     seen_ids.add(item.id)
                     if symbols:
                         item.companies = _match_companies(item.headline, symbols)
-                    all_items.append(item)
-
+                    
+                    # Filter to stocks/gold only
+                    text = item.headline + " " + (item.summary or "")
+                    if not _is_stock_or_gold_news(text):
+                        continue
+                    
+                    # Deduplicate by primary company — keep highest confidence
+                    primary = _get_primary_company(item.companies, item.headline, item.summary or "")
+                    if primary:
+                        if primary not in seen_companies or item.confidence > seen_companies[primary].confidence:
+                            seen_companies[primary] = item
+                    else:
+                        all_items.append(item)
+    
+    # Add deduplicated company news
+    all_items.extend(seen_companies.values())
+    
     # Sort by most recent (best effort)
     _news_cache = all_items
     _last_fetch = now
-    logger.info(f"Fetched {len(all_items)} unique news items")
+    logger.info(f"Fetched {len(all_items)} unique news items (deduplicated by company)")
     return all_items
 
 
 def get_cached_news() -> list[NewsItem]:
     return _news_cache
+
+
+def clear_news_cache():
+    """Clear the news cache (used when switching pages)."""
+    global _news_cache, _last_fetch
+    _news_cache = []
+    _last_fetch = 0.0

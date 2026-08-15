@@ -229,6 +229,8 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         "contractions":     len(contractions),
         "contraction_pcts": [round(c, 1) for c in contractions],
         "pivot":            round(pivot, 2),
+        "entry_price":      round(pivot * 1.005, 2) if pivot > 0 else round(cmp, 2),  # 0.5% above pivot
+        "stop_loss":        round(pivot * (1 - atr / cmp) if cmp > 0 else pivot * 0.95, 2),
         "is_breakout":      is_bo,
         "volume_ratio":     vr if is_bo else round(df["volume"].iloc[-1] / vol_20, 2) if vol_20 else 1.0,
         "vol_dryup":        dryup,
