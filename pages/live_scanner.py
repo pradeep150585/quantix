@@ -154,7 +154,7 @@ def render(slot):
         mask = df["symbol"].str.contains(search.upper(), na=False)
         df = df[mask]
     
-    sig_filter = st.selectbox("Signal", ["BUY & SELL", "BUY only", "SELL only", "All"], index=0, key="live_sig_filter")
+    sig_filter = st.selectbox("Signal", ["BUY & SELL", "BUY only", "SELL only", "All"], index=0, key="live_sig_filter_v1")
     if sig_filter == "BUY & SELL":
         df = df[df["signal"].isin(["BUY", "SELL"])]
     elif sig_filter == "BUY only":

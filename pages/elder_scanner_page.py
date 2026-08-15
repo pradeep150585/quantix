@@ -232,7 +232,7 @@ def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
 
 # -- Stock row -----------------------------------------------------------------
 
-def _render_row(row: pd.Series, rank: int, chart_store: dict):
+def _render_row(row: pd.Series, chart_store: dict):
     symbol  = row.get("symbol", "")
     score   = row.get("score", 0)
     grade   = row.get("grade", "")
@@ -248,7 +248,7 @@ def _render_row(row: pd.Series, rank: int, chart_store: dict):
     pct_s   = f"+{pct:.2f}%" if pct > 0 else f"{pct:.2f}%"
     grade_c = _grade_color(grade)
 
-    label = f"#{rank}  {symbol}  |  Rs{cmp:,.2f}  {pct_s}  |  Entry: Rs{entry:,.2f}  |  {signal}  |  Score {score}"
+    label = f"{symbol}  |  Rs{cmp:,.2f}  {pct_s}  |  Entry: Rs{entry:,.2f}  |  {signal}  |  Score {score}"
 
     with st.expander(label, expanded=False):
         components.html(f"""<!DOCTYPE html><html><head>
@@ -297,7 +297,7 @@ def _render_row(row: pd.Series, rank: int, chart_store: dict):
                 fig = _build_elder_chart(symbol, row, cdf)
                 st.plotly_chart(fig, use_container_width=True,
                                 config={"displayModeBar": False},
-                                key=f"elder_chart_{symbol}_{rank}")
+                                key=f"elder_chart_{symbol}")
             else:
                 st.info("Chart data unavailable.")
 
@@ -333,8 +333,8 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
         if subset.empty:
             st.info("No setups in this category.")
             return
-        for rank, (_, row) in enumerate(subset.head(20).iterrows(), 1):
-            _render_row(row, rank, chart_store)
+        for _, row in subset.head(20).iterrows():
+            _render_row(row, chart_store)
 
     with t_ap:  _tab(a_plus)
     with t_a:   _tab(a_grade)
