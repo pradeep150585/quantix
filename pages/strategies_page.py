@@ -287,8 +287,12 @@ def render(slot):
             st.session_state[_SCAN_KEY] = df
         st.session_state[_LAST_REFRESH_KEY] = now
 
-    # Filter: only stocks with script above 80
-    df_filtered = df[df['best_score'] > 80]
+    # Filter: only stocks with score above 70
+    df_filtered = df[df['best_score'] > 70]
+    
+    if df_filtered.empty:
+        st.info(f"No stocks with score > 70. Max score in data: {df['best_score'].max():.1f}")
+        df_filtered = df.head(10)  # Show top 10 anyway
     
     # Summary metrics
     c1, c2, c3, c4 = st.columns(4)
