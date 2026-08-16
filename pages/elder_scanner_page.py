@@ -350,7 +350,8 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
 
 def render_content():
     """Called from within a tab — no slot needed."""
-    st.empty()  # Clear lingering components
+    st.empty()
+    st.empty()
     ph = st.empty()
     ph.markdown(
         '<style>#qx-loading-overlay{position:relative!important;height:300px!important;'

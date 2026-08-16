@@ -175,6 +175,7 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict):
 
 def _render_vcp():
     st.empty()
+    st.empty()
     ph = st.empty()
     ph.markdown(loading_html("Scanning for VCP setups..."), unsafe_allow_html=True)
     try:
@@ -199,7 +200,7 @@ def _render_vcp():
         return
 
     breakouts  = df[df["is_breakout"] == True]
-    near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -8)]
+    near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -15)]
     avg_score  = df["vcp_score"].mean()
 
     c1, c2, c3, c4 = st.columns(4)
@@ -266,6 +267,8 @@ def render(slot):
     st.empty()
     tab_vcp, tab_elder = st.tabs(["VCP Scanner", "Elder Triple Screen"])
     with tab_vcp:
+        st.empty()
         _render_vcp()
     with tab_elder:
+        st.empty()
         elder_page.render_content()

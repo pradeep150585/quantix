@@ -2122,3 +2122,7 @@
 2026-08-16 13:29:28.417 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
 2026-08-16 13:30:44.717 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 28 setups from 200 stocks
 2026-08-16 13:32:22.300 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 14:57:53.952 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 14:57:56.749 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 14:58:47.790 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 28 setups from 200 stocks
+2026-08-16 14:59:45.361 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks

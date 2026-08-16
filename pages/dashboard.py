@@ -201,7 +201,7 @@ setInterval(refresh, 3000);
 
 def render(slot):
     slot.empty()
-    st.empty()  # Clear lingering components
+    st.empty()
     slot.markdown(loading_html("Loading market data…"), unsafe_allow_html=True)
 
     quotes = _run(get_all_index_quotes())

@@ -92,6 +92,7 @@ body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif;
 
 def render(slot):
     slot.empty()
+    st.empty()
     slot.markdown(loading_html("Fetching market news..."), unsafe_allow_html=True)
     news_dicts, symbols = _fetch_news()
     news_items = [NewsItem(**d) for d in news_dicts]
