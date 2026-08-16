@@ -273,6 +273,10 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
 def render(slot):
     slot.empty()
     with slot.container():
+        # Version indicator for debugging
+        CODE_VERSION = "v2.1-breakout-fix"
+        logger.info(f"AI Picks page render - Code version: {CODE_VERSION}")
+        
         # Always clear cache to ensure fresh data (remove this in production if scans are slow)
         _KEY = "_combined_scan_result"
         if _KEY in st.session_state:
