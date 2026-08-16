@@ -328,5 +328,13 @@ async def run_vcp_scan() -> tuple[pd.DataFrame, dict]:
         return pd.DataFrame(), {}
 
     df = pd.DataFrame(clean).sort_values("vcp_score", ascending=False).reset_index(drop=True)
+    
+    # Enhanced logging for debugging
+    breakouts = df[df["is_breakout"] == True]
+    low_score_breakouts = breakouts[breakouts["vcp_score"] <= 30]
     logger.info(f"VCP scan: {len(df)} setups from {len(symbols_df)} stocks")
+    logger.info(f"  - Total breakouts: {len(breakouts)}")
+    logger.info(f"  - Breakouts with score ≤30: {len(low_score_breakouts)}")
+    logger.info(f"  - Score range: {df['vcp_score'].min():.1f} to {df['vcp_score'].max():.1f}")
+    
     return df, chart_store

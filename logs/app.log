@@ -2204,3 +2204,17 @@
 2026-08-16 17:03:17.856 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
 2026-08-16 17:03:20.475 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
 2026-08-16 17:04:25.255 | INFO     | services.scan_runner:_combined_scan:78 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 17:21:08.125 | INFO     | services.scan_runner:_combined_scan:78 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 17:30:05.235 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 17:30:07.403 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 17:31:04.720 | INFO     | services.scan_runner:_combined_scan:78 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 17:49:21.428 | INFO     | news:fetch_news:246 - Fetched 39 unique news items (deduplicated by company)
+2026-08-16 21:52:29.184 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 21:52:31.352 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 21:53:30.853 | INFO     | services.scan_runner:_combined_scan:78 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 22:29:17.558 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 22:29:19.791 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 22:30:36.496 | INFO     | services.scan_runner:_combined_scan:78 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 22:30:36.496 | INFO     | pages.ai_picks:_render_vcp:188 - VCP UI: Before filtering - 11 setups, 2 breakouts
+2026-08-16 22:30:36.496 | INFO     | pages.ai_picks:_render_vcp:204 - VCP UI: After filtering - 10 setups, 2 breakouts, 8 near pivot
+2026-08-16 22:30:36.496 | INFO     | pages.ai_picks:_render_vcp:205 - VCP UI: Filtered out 1 low-score non-breakout setups

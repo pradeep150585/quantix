@@ -114,6 +114,10 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict, key_prefix: s
     if squeeze: badges.append("Squeeze")
     if dryup: badges.append("Vol Dry-up")
     if contractions >= 3: badges.append(f"{contractions}-Stage")
+    
+    # Add quality indicator for low-score breakouts
+    if is_bo and score <= 30:
+        badges.append("⚠️ Low Pattern Score")
 
     label = f"{symbol}  |  Rs{cmp:,.0f}  {pct_s}  |  Entry: Rs{entry:,.0f}  |  Score {score:.0f}"
 
@@ -172,27 +176,44 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict, key_prefix: s
 # -- VCP tab content -----------------------------------------------------------
 
 def _render_vcp(df: pd.DataFrame, chart_store: dict):
+    from loguru import logger
 
     if df is None or df.empty:
         st.info("No stocks currently meet the VCP criteria.")
         return
 
-    # Filter: only stocks with score above 30
-    df = df[df["vcp_score"] > 30]
+    # Log pre-filter stats
+    total_before = len(df)
+    breakouts_before = len(df[df["is_breakout"] == True])
+    logger.info(f"VCP UI: Before filtering - {total_before} setups, {breakouts_before} breakouts")
+    
+    # Filter: high score OR active breakout (don't filter out breakouts)
+    score_threshold = 30
+    df = df[(df["vcp_score"] > score_threshold) | (df["is_breakout"] == True)]
     
     if df.empty:
-        st.info("No stocks with VCP score above 30.")
+        st.info(f"No stocks with VCP score above {score_threshold} or active breakouts.")
+        logger.warning(f"VCP UI: All {total_before} setups filtered out")
         return
 
     breakouts  = df[df["is_breakout"] == True]
     near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -20)]
     avg_score  = df["vcp_score"].mean()
+    
+    # Log post-filter stats
+    logger.info(f"VCP UI: After filtering - {len(df)} setups, {len(breakouts)} breakouts, {len(near_pivot)} near pivot")
+    logger.info(f"VCP UI: Filtered out {total_before - len(df)} low-score non-breakout setups")
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("VCP Setups",       len(df))
     c2.metric("Active Breakouts", len(breakouts))
     c3.metric("Near Pivot",       len(near_pivot))
     c4.metric("Avg VCP Score",    f"{avg_score:.1f}")
+    
+    # Info message about filtering
+    filtered_count = total_before - len(df)
+    if filtered_count > 0:
+        st.info(f"ℹ️ Showing {len(df)} setups (filtered out {filtered_count} low-score non-breakout patterns). All active breakouts are shown regardless of score.")
 
     st.markdown("<div style='margin-bottom:8px;'></div>", unsafe_allow_html=True)
 
