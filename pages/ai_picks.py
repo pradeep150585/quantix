@@ -4,6 +4,7 @@ Page 5 - AI Top Picks: VCP Scanner + Elder Triple Screen
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
+from loguru import logger
 from services.scan_runner import run_combined_scan_cached
 from components.ui import loading_html
 import pages.elder_scanner_page as elder_page
@@ -176,6 +177,8 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict, key_prefix: s
 # -- VCP tab content -----------------------------------------------------------
 
 def _render_vcp(df: pd.DataFrame, chart_store: dict):
+    logger.info(f"_render_vcp called with df: {type(df)}, len: {len(df) if df is not None and not df.empty else 0}")
+    
     if df is None or df.empty:
         st.info("No stocks currently meet the VCP criteria.")
         return
@@ -273,6 +276,7 @@ def render(slot):
         
         try:
             vcp_df, vcp_charts, elder_df, elder_charts = run_combined_scan_cached()
+            logger.info(f"Scan returned: vcp_df={type(vcp_df)} len={len(vcp_df) if not vcp_df.empty else 0}, elder_df={type(elder_df)} len={len(elder_df) if not elder_df.empty else 0}")
         except Exception as e:
             ph.empty()
             st.error(f"Scan failed: {e}")

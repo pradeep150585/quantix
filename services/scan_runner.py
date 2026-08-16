@@ -80,6 +80,10 @@ async def _combined_scan():
         )
 
         logger.info(f"Scan complete: VCP={len(vcp_df)}, Elder={len(elder_df)}")
+        
+        # Debug: Check what we're returning
+        logger.debug(f"Returning: vcp_df shape={vcp_df.shape}, elder_df shape={elder_df.shape}")
+        
         return vcp_df, vcp_chart_store, elder_df, elder_chart_store
         
     except Exception as e:
@@ -115,6 +119,7 @@ def run_combined_scan_cached():
     
     try:
         result = loop.run_until_complete(_combined_scan())
+        logger.info(f"Scan completed - returning result with VCP rows: {len(result[0]) if result and len(result) > 0 and not result[0].empty else 0}")
     except Exception as e:
         logger.error(f"Scan failed: {e}", exc_info=True)
         result = (pd.DataFrame(), {}, pd.DataFrame(), {})

@@ -333,5 +333,7 @@ async def run_vcp_scan() -> tuple[pd.DataFrame, dict]:
     
     breakouts = df[df["is_breakout"] == True]
     logger.info(f"VCP scan: {len(df)} setups, {len(breakouts)} breakouts")
+    logger.debug(f"VCP DataFrame columns: {df.columns.tolist()}")
+    logger.debug(f"VCP DataFrame shape: {df.shape}")
     
     return df, chart_store
