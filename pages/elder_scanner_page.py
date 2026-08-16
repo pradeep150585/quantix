@@ -348,26 +348,27 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
 
 # -- Entry points --------------------------------------------------------------
 
-def render_content():
-    """Called from within a tab — no slot needed."""
-    st.empty()
-    st.empty()
-    ph = st.empty()
-    ph.markdown(
-        '<style>#qx-loading-overlay{position:relative!important;height:300px!important;'
-        'top:0!important;background:transparent!important;}</style>',
-        unsafe_allow_html=True,
-    )
-    from components.ui import loading_html
-    ph.markdown(loading_html("Running Elder Triple Screen scan..."), unsafe_allow_html=True)
-    try:
-        df, chart_store = _run(run_elder_scan())
-    except Exception as e:
-        ph.empty()
-        st.error(f"Elder scan failed: {e}")
-        st.code(traceback.format_exc())
-        return
-    ph.empty()
+def render_content(df: pd.DataFrame = None, chart_store: dict = None):
+    """Called from within a tab — accepts pre-fetched data or runs its own scan."""
+    if df is None or chart_store is None:
+        # Standalone fallback: run own scan with session state cache
+        cache_key = "_elder_scan_data"
+        if cache_key not in st.session_state:
+            from components.ui import loading_html
+            ph = st.empty()
+            ph.markdown(loading_html("Running Elder Triple Screen scan..."), unsafe_allow_html=True)
+            try:
+                df, chart_store = _run(run_elder_scan())
+                st.session_state[cache_key] = (df, chart_store)
+            except Exception as e:
+                ph.empty()
+                st.error(f"Elder scan failed: {e}")
+                st.code(traceback.format_exc())
+                return
+            ph.empty()
+        else:
+            df, chart_store = st.session_state[cache_key]
+
     _render_elder(df, chart_store)
 
 

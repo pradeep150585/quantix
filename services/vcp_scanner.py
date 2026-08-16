@@ -24,9 +24,9 @@ except ImportError:
 from services.instruments import get_nifty200_symbols
 from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp
 
-_HIST_DAYS        = 300
-_CHART_BARS       = 80   # bars to keep for charting
-_LOOKBACK         = 20    # swing detection window (reduced for weekly)
+_HIST_DAYS        = 250
+_CHART_BARS       = 60
+_LOOKBACK         = 15
 _MIN_CONTRACTIONS = 2
 _MAX_CONTRACTIONS = 4
 
@@ -306,7 +306,7 @@ async def run_vcp_scan() -> tuple[pd.DataFrame, dict]:
     # Fetch live LTP for all symbols in one call
     ltp_raw = await get_ltp(all_keys)
 
-    sem     = asyncio.Semaphore(50)
+    sem     = asyncio.Semaphore(100)
     tasks   = [_process(row, ltp_raw, sem) for _, row in symbols_df.iterrows()]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 

@@ -92,66 +92,65 @@ body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif;
 
 def render(slot):
     slot.empty()
-    st.empty()
-    slot.markdown(loading_html("Fetching market news..."), unsafe_allow_html=True)
-    news_dicts, symbols = _fetch_news()
-    news_items = [NewsItem(**d) for d in news_dicts]
-    slot.empty()
-    st.empty()  # Clear any lingering components
+    with slot.container():
+        ph = st.empty()
+        ph.markdown(loading_html("Fetching market news..."), unsafe_allow_html=True)
+        news_dicts, symbols = _fetch_news()
+        news_items = [NewsItem(**d) for d in news_dicts]
+        ph.empty()
 
-    if not news_items:
-        st.warning("No news available. Check your internet connection.")
-        return
+        if not news_items:
+            st.warning("No news available. Check your internet connection.")
+            return
 
-    from news import _is_stock_or_gold_news
-    filtered = [
-        n for n in news_items
-        if _is_stock_or_gold_news(_clean(n.headline) + " " + _clean(n.summary or ""))
-        and (n.companies or any(s in (_clean(n.headline) + " " + _clean(n.summary or "")).upper() for s in symbols))
-    ]
+        from news import _is_stock_or_gold_news
+        filtered = [
+            n for n in news_items
+            if _is_stock_or_gold_news(_clean(n.headline) + " " + _clean(n.summary or ""))
+            and (n.companies or any(s in (_clean(n.headline) + " " + _clean(n.summary or "")).upper() for s in symbols))
+        ]
 
-    def _sort_key(n):
-        order = {"Strong Buy": 0, "Strong Sell": 1}
-        return (order.get(n.recommendation, 2), -n.confidence)
+        def _sort_key(n):
+            order = {"Strong Buy": 0, "Strong Sell": 1}
+            return (order.get(n.recommendation, 2), -n.confidence)
 
-    filtered.sort(key=_sort_key)
+        filtered.sort(key=_sort_key)
 
-    if not filtered:
-        st.info("No stock or gold news found for Nifty 200 right now.")
-        return
+        if not filtered:
+            st.info("No stock or gold news found for Nifty 200 right now.")
+            return
 
-    buy_items  = [n for n in filtered if n.recommendation == "Strong Buy"]
-    sell_items = [n for n in filtered if n.recommendation == "Strong Sell"]
+        buy_items  = [n for n in filtered if n.recommendation == "Strong Buy"]
+        sell_items = [n for n in filtered if n.recommendation == "Strong Sell"]
+        buy_c  = len(buy_items)
+        sell_c = len(sell_items)
 
-    buy_c  = len(buy_items)
-    sell_c = len(sell_items)
-
-    if buy_items or sell_items:
-        banner_parts = []
-        if buy_items:
-            banner_parts.append(
-                f'<span style="background:rgba(0,200,83,.12);color:#00c853;border:1px solid rgba(0,200,83,.3);'
-                f'border-radius:4px;padding:6px 14px;font-size:.78rem;font-weight:700;">'
-                f'&#9650; STRONG BUY &nbsp; {buy_c} stocks</span>'
+        if buy_items or sell_items:
+            banner_parts = []
+            if buy_items:
+                banner_parts.append(
+                    f'<span style="background:rgba(0,200,83,.12);color:#00c853;border:1px solid rgba(0,200,83,.3);'
+                    f'border-radius:4px;padding:6px 14px;font-size:.78rem;font-weight:700;">'
+                    f'&#9650; STRONG BUY &nbsp; {buy_c} stocks</span>'
+                )
+            if sell_items:
+                banner_parts.append(
+                    f'<span style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3);'
+                    f'border-radius:4px;padding:6px 14px;font-size:.78rem;font-weight:700;">'
+                    f'&#9660; STRONG SELL &nbsp; {sell_c} stocks</span>'
+                )
+            st.markdown(
+                f'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">{" ".join(banner_parts)}</div>',
+                unsafe_allow_html=True,
             )
-        if sell_items:
-            banner_parts.append(
-                f'<span style="background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.3);'
-                f'border-radius:4px;padding:6px 14px;font-size:.78rem;font-weight:700;">'
-                f'&#9660; STRONG SELL &nbsp; {sell_c} stocks</span>'
-            )
+
         st.markdown(
-            f'<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">{" ".join(banner_parts)}</div>',
+            f'<div style="font-size:.68rem;color:#6b7280;margin-bottom:10px;">'
+            f'{len(filtered)} articles &nbsp;&middot;&nbsp;'
+            f'<span style="color:#00c853">{buy_c} Strong Buy</span>'
+            f' &nbsp; <span style="color:#ef4444">{sell_c} Strong Sell</span>'
+            f' &nbsp; Stocks &amp; Gold only &middot; Deduplicated &middot; Strong signals first</div>',
             unsafe_allow_html=True,
         )
-
-    st.markdown(
-        f'<div style="font-size:.68rem;color:#6b7280;margin-bottom:10px;">'
-        f'{len(filtered)} articles &nbsp;&middot;&nbsp;'
-        f'<span style="color:#00c853">{buy_c} Strong Buy</span>'
-        f' &nbsp; <span style="color:#ef4444">{sell_c} Strong Sell</span>'
-        f' &nbsp; Stocks &amp; Gold only &middot; Deduplicated &middot; Strong signals first</div>',
-        unsafe_allow_html=True,
-    )
-    card_height = min(len(filtered) * 120 + 20, 600)
-    components.html(_build_news_html(filtered), height=card_height, scrolling=True)
+        card_height = min(len(filtered) * 120 + 20, 600)
+        components.html(_build_news_html(filtered), height=card_height, scrolling=True)

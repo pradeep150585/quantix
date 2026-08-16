@@ -249,73 +249,57 @@ def _render_strategy_row(rank: int, row: pd.Series):
 
 def render(slot):
     slot.empty()
-    st.empty()
-    slot.markdown(_loading_html("Initialising scan &nbsp;&middot;&nbsp; 0 / 200 stocks"), unsafe_allow_html=True)
+    with slot.container():
+        ph = st.empty()
+        ph.markdown(_loading_html("Initialising scan &nbsp;&middot;&nbsp; 0 / 200 stocks"), unsafe_allow_html=True)
 
-    if _SCAN_KEY not in st.session_state:
-        cached = get_cached_scan()
-        if cached is not None and not cached.empty:
-            st.session_state[_SCAN_KEY] = cached
-        else:
-            slot.empty()
-            ph = st.empty()
-            st.session_state[_SCAN_KEY] = _run_scan_with_progress(ph)
-            ph.empty()
-        st.session_state[_LAST_REFRESH_KEY] = time.time()
+        if _SCAN_KEY not in st.session_state:
+            cached = get_cached_scan()
+            if cached is not None and not cached.empty:
+                st.session_state[_SCAN_KEY] = cached
+            else:
+                ph.empty()
+                ph2 = st.empty()
+                st.session_state[_SCAN_KEY] = _run_scan_with_progress(ph2)
+                ph2.empty()
+            st.session_state[_LAST_REFRESH_KEY] = time.time()
 
-    df = st.session_state.get(_SCAN_KEY, pd.DataFrame())
-    slot.empty()
+        df = st.session_state.get(_SCAN_KEY, pd.DataFrame())
+        ph.empty()
 
-    if df is None or df.empty:
-        st.warning("No scan data. Ensure Upstox token is configured.")
-        return
+        if df is None or df.empty:
+            st.warning("No scan data. Ensure Upstox token is configured.")
+            return
 
-    now = time.time()
-    last = st.session_state.get(_LAST_REFRESH_KEY, 0)
-    if now - last >= _REFRESH_INTERVAL:
-        raw = _refresh_prices(tuple(df["instrument_key"].tolist()))
-        if raw:
-            df = df.copy()
-            for i, row in df.iterrows():
-                q = parse_quote(raw.get(row["instrument_key"], {}))
-                if q and q.get("ltp", 0) > 0:
-                    ltp = q["ltp"]
-                    prev = q.get("prev_close", 0)
-                    df.at[i, "cmp"] = round(ltp, 2)
-                    df.at[i, "pct_change"] = round((ltp - prev) / prev * 100, 2) if prev else 0
-            st.session_state[_SCAN_KEY] = df
-        st.session_state[_LAST_REFRESH_KEY] = now
+        now = time.time()
+        last = st.session_state.get(_LAST_REFRESH_KEY, 0)
+        if now - last >= _REFRESH_INTERVAL:
+            raw = _refresh_prices(tuple(df["instrument_key"].tolist()))
+            if raw:
+                df = df.copy()
+                for i, row in df.iterrows():
+                    q = parse_quote(raw.get(row["instrument_key"], {}))
+                    if q and q.get("ltp", 0) > 0:
+                        ltp = q["ltp"]
+                        prev = q.get("prev_close", 0)
+                        df.at[i, "cmp"] = round(ltp, 2)
+                        df.at[i, "pct_change"] = round((ltp - prev) / prev * 100, 2) if prev else 0
+                st.session_state[_SCAN_KEY] = df
+            st.session_state[_LAST_REFRESH_KEY] = now
 
-    # Filter: only stocks with score above 70
-    df_filtered = df[df['best_score'] > 70]
-    
-    if df_filtered.empty:
-        st.info(f"No stocks with score > 70. Max score in data: {df['best_score'].max():.1f}")
-        df_filtered = df.head(10)  # Show top 10 anyway
-    
-    # Summary metrics
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Setups", len(df_filtered))
-    c2.metric("Avg Score", f"{df_filtered['best_score'].mean():.1f}")
-    c3.metric("High Volume", len(df_filtered[df_filtered['volume_ratio'] >= 1.5]))
-    c4.metric("Near 52W High", len(df_filtered[df_filtered['dist_52h_pct'] >= -5]))
+        df_filtered = df[df['best_score'] > 70]
+        if df_filtered.empty:
+            st.info(f"No stocks with score > 70. Max score in data: {df['best_score'].max():.1f}")
+            df_filtered = df.head(10)
 
-    st.markdown("---")
-    st.markdown('<div style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Strategy Setups - Click to Expand for Chart</div>', unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total Setups", len(df_filtered))
+        c2.metric("Avg Score", f"{df_filtered['best_score'].mean():.1f}")
+        c3.metric("High Volume", len(df_filtered[df_filtered['volume_ratio'] >= 1.5]))
+        c4.metric("Near 52W High", len(df_filtered[df_filtered['dist_52h_pct'] >= -5]))
 
-    # Render expandable rows for each stock
-    for rank, (_, row) in enumerate(df_filtered.head(30).iterrows(), 1):
-        _render_strategy_row(rank, row)
+        st.markdown("---")
+        st.markdown('<div style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Strategy Setups - Click to Expand for Chart</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
-    col_x, col_y = st.columns(2)
-    with col_x:
-        st.download_button("Export CSV",
-                           df_filtered.drop(columns=["instrument_key", "badges"], errors="ignore")
-                             .to_csv(index=False).encode(),
-                           "strategy_scan.csv", "text/csv")
-    with col_y:
-        buf = io.BytesIO()
-        df_filtered.drop(columns=["instrument_key", "badges"], errors="ignore").to_excel(buf, index=False, engine="openpyxl")
-        st.download_button("Export Excel", buf.getvalue(), "strategy_scan.xlsx",
-                           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        for rank, (_, row) in enumerate(df_filtered.head(30).iterrows(), 1):
+            _render_strategy_row(rank, row)

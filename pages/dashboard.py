@@ -201,18 +201,17 @@ setInterval(refresh, 3000);
 
 def render(slot):
     slot.empty()
-    st.empty()
-    slot.markdown(loading_html("Loading market data…"), unsafe_allow_html=True)
-
-    quotes = _run(get_all_index_quotes())
-    indicators_map = {}
-    for name in [n for n in INDEX_KEYS if n not in _EXCLUDE]:
-        key = INDEX_KEYS.get(name, "")
-        if key:
-            try:
-                indicators_map[name] = _fetch_indicators(key)
-            except Exception:
-                indicators_map[name] = (50, 0)
-
-    slot.empty()
-    components.html(_build_dashboard_html(quotes, indicators_map), height=500, scrolling=True)
+    with slot.container():
+        ph = st.empty()
+        ph.markdown(loading_html("Loading market data…"), unsafe_allow_html=True)
+        quotes = _run(get_all_index_quotes())
+        indicators_map = {}
+        for name in [n for n in INDEX_KEYS if n not in _EXCLUDE]:
+            key = INDEX_KEYS.get(name, "")
+            if key:
+                try:
+                    indicators_map[name] = _fetch_indicators(key)
+                except Exception:
+                    indicators_map[name] = (50, 0)
+        ph.empty()
+        components.html(_build_dashboard_html(quotes, indicators_map), height=500, scrolling=True)

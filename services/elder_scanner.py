@@ -26,8 +26,8 @@ from loguru import logger
 from services.instruments import get_nifty200_symbols
 from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp
 
-_HIST_DAYS  = 365
-_CHART_BARS = 120
+_HIST_DAYS  = 300
+_CHART_BARS = 80
 _MIN_RR     = 1.5
 
 
@@ -431,7 +431,7 @@ async def run_elder_scan() -> tuple[pd.DataFrame, dict]:
     await bulk_prefetch_today_ohlc(all_keys)
     ltp_raw = await get_ltp(all_keys)
 
-    sem     = asyncio.Semaphore(50)
+    sem     = asyncio.Semaphore(100)
     tasks   = [_process(row, ltp_raw, sem) for _, row in symbols_df.iterrows()]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 

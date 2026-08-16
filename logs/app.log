@@ -2126,3 +2126,78 @@
 2026-08-16 14:57:56.749 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
 2026-08-16 14:58:47.790 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 28 setups from 200 stocks
 2026-08-16 14:59:45.361 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:25:16.283 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:25:18.494 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:25:59.056 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 28 setups from 200 stocks
+2026-08-16 15:26:48.654 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:29:01.679 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:29:04.364 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:29:45.513 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:31:06.481 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:31:08.794 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:31:54.915 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:32:38.521 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:35:38.280 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:35:40.863 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:36:23.530 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:37:09.458 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:39:12.233 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:39:14.786 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:39:21.317 | INFO     | news:fetch_news:246 - Fetched 39 unique news items (deduplicated by company)
+2026-08-16 15:40:11.538 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:40:59.405 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:42:24.541 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:42:26.807 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:43:13.543 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:44:06.171 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:46:23.717 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:46:26.287 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:47:10.746 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:48:00.427 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:49:12.350 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:49:14.671 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:49:56.773 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:51:11.293 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:53:25.061 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:53:30.602 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:54:03.586 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 15:58:23.738 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 15:58:26.689 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 15:59:10.771 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 15:59:59.647 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:02:18.943 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:02:21.100 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:02:21.806 | INFO     | news:fetch_news:246 - Fetched 39 unique news items (deduplicated by company)
+2026-08-16 16:03:10.217 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:03:55.734 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:05:22.522 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:05:24.688 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:06:11.114 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:07:02.698 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:08:00.276 | INFO     | news:fetch_news:246 - Fetched 39 unique news items (deduplicated by company)
+2026-08-16 16:12:21.423 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:12:24.179 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:13:07.787 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:13:55.988 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:18:34.934 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:18:37.740 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:19:21.494 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:20:14.813 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:23:22.145 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:24:02.874 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:27:45.143 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:27:47.563 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:28:31.882 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:29:18.223 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:31:11.862 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:31:14.732 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:31:58.258 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:32:49.903 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:38:57.505 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:39:00.073 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:39:50.239 | INFO     | services.vcp_scanner:run_vcp_scan:329 - VCP scan: 11 setups from 200 stocks
+2026-08-16 16:40:44.999 | INFO     | services.elder_scanner:run_elder_scan:450 - Elder scan: 118 setups from 200 stocks
+2026-08-16 16:43:54.719 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 16:43:56.919 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 16:44:58.279 | INFO     | services.scan_runner:_combined_scan:78 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 16:46:13.229 | INFO     | news:fetch_news:246 - Fetched 39 unique news items (deduplicated by company)

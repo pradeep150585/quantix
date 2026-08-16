@@ -101,68 +101,68 @@ refresh();setInterval(refresh,3000);
 
 def render(slot):
     slot.empty()
-    st.empty()
-    slot.markdown(loading_html("Loading live data…"), unsafe_allow_html=True)
+    with slot.container():
+        ph = st.empty()
+        ph.markdown(loading_html("Loading live data…"), unsafe_allow_html=True)
 
-    if _SYMBOLS_KEY not in st.session_state:
-        st.session_state[_SYMBOLS_KEY] = _run(get_nifty200_symbols())
-    symbols_df = st.session_state[_SYMBOLS_KEY]
+        if _SYMBOLS_KEY not in st.session_state:
+            st.session_state[_SYMBOLS_KEY] = _run(get_nifty200_symbols())
+        symbols_df = st.session_state[_SYMBOLS_KEY]
 
-    if symbols_df.empty:
-        slot.empty()
-        st.warning("Could not load Nifty 200 constituents.")
-        return
+        if symbols_df.empty:
+            ph.empty()
+            st.warning("Could not load Nifty 200 constituents.")
+            return
 
-    keys = tuple(symbols_df["instrument_key"].tolist())
-    raw_quotes = _run(get_quotes(list(keys)))
-    slot.empty()
+        keys = tuple(symbols_df["instrument_key"].tolist())
+        raw_quotes = _run(get_quotes(list(keys)))
+        ph.empty()
 
-    if not raw_quotes:
-        st.warning("No live data. Check your Upstox access token in Settings.")
-        return
+        if not raw_quotes:
+            st.warning("No live data. Check your Upstox access token in Settings.")
+            return
 
-    records = []
-    for _, row in symbols_df.iterrows():
-        key    = row["instrument_key"]
-        symbol = row.get("symbol", "")
-        raw = raw_quotes.get(key) or raw_quotes.get(f"NSE_EQ:{symbol}") or raw_quotes.get(f"NSE_EQ|{symbol}") or {}
-        q = parse_quote(raw)
-        if not q or q.get("ltp", 0) == 0:
-            continue
-        ltp        = q["ltp"]
-        prev_close = q.get("prev_close", 0)
-        pct_change = (ltp - prev_close) / prev_close * 100 if prev_close else 0
-        tbq, tsq   = q.get("tbq", 0), q.get("tsq", 0)
-        tbq_tsq    = round(tbq / tsq, 2) if tsq else 0
-        records.append({
-            "symbol":         symbol,
-            "cmp":            round(ltp, 2),
-            "pct_change":     round(pct_change, 2),
-            "prev_close":     prev_close,
-            "tbq_tsq":        tbq_tsq,
-            "signal":         _ai_signal(tbq_tsq, pct_change, 1.0),
-            "instrument_key": key,
-        })
+        records = []
+        for _, row in symbols_df.iterrows():
+            key    = row["instrument_key"]
+            symbol = row.get("symbol", "")
+            raw = raw_quotes.get(key) or raw_quotes.get(f"NSE_EQ:{symbol}") or raw_quotes.get(f"NSE_EQ|{symbol}") or {}
+            q = parse_quote(raw)
+            if not q or q.get("ltp", 0) == 0:
+                continue
+            ltp        = q["ltp"]
+            prev_close = q.get("prev_close", 0)
+            pct_change = (ltp - prev_close) / prev_close * 100 if prev_close else 0
+            tbq, tsq   = q.get("tbq", 0), q.get("tsq", 0)
+            tbq_tsq    = round(tbq / tsq, 2) if tsq else 0
+            records.append({
+                "symbol":         symbol,
+                "cmp":            round(ltp, 2),
+                "pct_change":     round(pct_change, 2),
+                "prev_close":     prev_close,
+                "tbq_tsq":        tbq_tsq,
+                "signal":         _ai_signal(tbq_tsq, pct_change, 1.0),
+                "instrument_key": key,
+            })
 
-    df = pd.DataFrame(records)
-    if df.empty:
-        st.warning("No live data returned. Market may be closed or token expired.")
-        return
+        df = pd.DataFrame(records)
+        if df.empty:
+            st.warning("No live data returned. Market may be closed or token expired.")
+            return
 
-    search = st.session_state.get("live_search", "")
-    if search:
-        mask = df["symbol"].str.contains(search.upper(), na=False)
-        df = df[mask]
-    
-    sig_filter = st.selectbox("Signal", ["BUY & SELL", "BUY only", "SELL only", "All"], index=0, key="live_sig_filter_v1")
-    if sig_filter == "BUY & SELL":
-        df = df[df["signal"].isin(["BUY", "SELL"])]
-    elif sig_filter == "BUY only":
-        df = df[df["signal"] == "BUY"]
-    elif sig_filter == "SELL only":
-        df = df[df["signal"] == "SELL"]
+        search = st.session_state.get("live_search", "")
+        if search:
+            mask = df["symbol"].str.contains(search.upper(), na=False)
+            df = df[mask]
 
-    df = df.sort_values("tbq_tsq", ascending=False).reset_index(drop=True)
+        sig_filter = st.selectbox("Signal", ["BUY & SELL", "BUY only", "SELL only", "All"], index=0, key="live_sig_filter_v1")
+        if sig_filter == "BUY & SELL":
+            df = df[df["signal"].isin(["BUY", "SELL"])]
+        elif sig_filter == "BUY only":
+            df = df[df["signal"] == "BUY"]
+        elif sig_filter == "SELL only":
+            df = df[df["signal"] == "SELL"]
 
-    token = cfg_get("upstox.access_token", "")
-    components.html(_build_table_html(df, time.strftime("%H:%M:%S"), token), height=450, scrolling=False)
+        df = df.sort_values("tbq_tsq", ascending=False).reset_index(drop=True)
+        token = cfg_get("upstox.access_token", "")
+        components.html(_build_table_html(df, time.strftime("%H:%M:%S"), token), height=450, scrolling=False)

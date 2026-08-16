@@ -1,12 +1,10 @@
 """
 Page 5 - AI Top Picks: VCP Scanner + Elder Triple Screen
 """
-import asyncio
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
-import plotly.graph_objects as go
-from services.vcp_scanner import run_vcp_scan
+from services.scan_runner import run_combined_scan_cached
 from components.ui import loading_html
 import pages.elder_scanner_page as elder_page
 
@@ -23,13 +21,6 @@ _YELLOW = "#fbbf24"
 _PURPLE = "#a78bfa"
 
 
-def _run(coro):
-    loop = asyncio.new_event_loop()
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
-
 
 def _score_color(s: float) -> str:
     return _GREEN if s >= 75 else (_YELLOW if s >= 50 else _RED)
@@ -37,7 +28,9 @@ def _score_color(s: float) -> str:
 
 # -- VCP chart builder ---------------------------------------------------------
 
-def _build_vcp_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figure:
+def _build_vcp_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame):
+    import plotly.graph_objects as go
+    
     if cdf.empty:
         return go.Figure()
 
@@ -97,6 +90,11 @@ def _build_vcp_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figur
 
 def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict):
     symbol  = row.get("symbol", "")
+    
+    # Skip if symbol not in chart store (data mismatch)
+    if symbol not in chart_store:
+        return
+    
     score   = row.get("vcp_score", 0)
     cmp     = row.get("cmp", 0)
     entry   = row.get("entry_price", 0)
@@ -173,34 +171,21 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict):
 
 # -- VCP tab content -----------------------------------------------------------
 
-def _render_vcp():
-    st.empty()
-    st.empty()
-    ph = st.empty()
-    ph.markdown(loading_html("Scanning for VCP setups..."), unsafe_allow_html=True)
-    try:
-        df, chart_store = _run(run_vcp_scan())
-    except Exception as e:
-        ph.empty()
-        st.error(f"VCP scan failed: {e}")
-        import traceback
-        st.code(traceback.format_exc())
-        return
-    ph.empty()
+def _render_vcp(df: pd.DataFrame, chart_store: dict):
 
     if df is None or df.empty:
         st.info("No stocks currently meet the VCP criteria.")
         return
 
-    # Filter: only stocks with score above 50
-    df = df[df["vcp_score"] > 50]
+    # Filter: only stocks with score above 30
+    df = df[df["vcp_score"] > 30]
     
     if df.empty:
-        st.info("No stocks with VCP score above 50.")
+        st.info("No stocks with VCP score above 30.")
         return
 
     breakouts  = df[df["is_breakout"] == True]
-    near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -15)]
+    near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -20)]
     avg_score  = df["vcp_score"].mean()
 
     c1, c2, c3, c4 = st.columns(4)
@@ -239,8 +224,11 @@ def _render_vcp():
     ])
 
     with t1:
-        for rank, (_, row) in enumerate(df.head(20).iterrows(), 1):
-            _render_vcp_card(rank, row, chart_store)
+        if df.empty:
+            st.info("No setups in this category.")
+        else:
+            for rank, (_, row) in enumerate(df.head(20).iterrows(), 1):
+                _render_vcp_card(rank, row, chart_store)
 
     with t2:
         if breakouts.empty:
@@ -261,14 +249,21 @@ def _render_vcp():
 
 def render(slot):
     slot.empty()
-    st.empty()
-    slot.markdown(loading_html("Loading AI scanner..."), unsafe_allow_html=True)
-    slot.empty()
-    st.empty()
-    tab_vcp, tab_elder = st.tabs(["VCP Scanner", "Elder Triple Screen"])
-    with tab_vcp:
-        st.empty()
-        _render_vcp()
-    with tab_elder:
-        st.empty()
-        elder_page.render_content()
+    with slot.container():
+        ph = st.empty()
+        ph.markdown(loading_html("Running AI scans..."), unsafe_allow_html=True)
+        try:
+            vcp_df, vcp_charts, elder_df, elder_charts = run_combined_scan_cached()
+        except Exception as e:
+            ph.empty()
+            st.error(f"Scan failed: {e}")
+            import traceback
+            st.code(traceback.format_exc())
+            return
+        ph.empty()
+
+        tab_vcp, tab_elder = st.tabs(["VCP Scanner", "Elder Triple Screen"])
+        with tab_vcp:
+            _render_vcp(vcp_df, vcp_charts)
+        with tab_elder:
+            elder_page.render_content(elder_df, elder_charts)
