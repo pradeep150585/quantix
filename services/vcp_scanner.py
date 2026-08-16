@@ -155,12 +155,14 @@ def _volume_dryup(df: pd.DataFrame) -> bool:
     return bool(df["volume"].tail(3).mean() < df["volume"].tail(8).iloc[:-1].mean())
 
 
-def _breakout_signal(df: pd.DataFrame, pivot: float) -> tuple[bool, float]:
+def _breakout_signal(df: pd.DataFrame, pivot: float, live_ltp: float = 0.0) -> tuple[bool, float]:
     if pivot <= 0 or len(df) < 3:
         return False, 0.0
-    vol_avg = df["volume"].tail(3).mean()
+    # Use a longer vol average (exclude last bar which may be partial)
+    vol_avg = df["volume"].iloc[:-1].tail(8).mean()
     vol_ratio = df["volume"].iloc[-1] / vol_avg if vol_avg else 0.0
-    is_bo     = bool(df["close"].iloc[-1] > pivot and vol_ratio >= 1.3)
+    price = live_ltp if live_ltp > 0 else float(df["close"].iloc[-1])
+    is_bo = bool(price > pivot and vol_ratio >= 1.3)
     return is_bo, round(vol_ratio, 2)
 
 
@@ -195,7 +197,7 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
 
     squeeze   = _volatility_squeeze(df)
     dryup     = _volume_dryup(df)
-    is_bo, vr = _breakout_signal(df, pivot)
+    is_bo, vr = _breakout_signal(df, pivot, live_ltp)
     score     = _vcp_score(contractions, vr, is_bo, squeeze, dryup)
 
     close  = df["close"]
