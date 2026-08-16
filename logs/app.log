@@ -2218,3 +2218,19 @@
 2026-08-16 22:30:36.496 | INFO     | pages.ai_picks:_render_vcp:188 - VCP UI: Before filtering - 11 setups, 2 breakouts
 2026-08-16 22:30:36.496 | INFO     | pages.ai_picks:_render_vcp:204 - VCP UI: After filtering - 10 setups, 2 breakouts, 8 near pivot
 2026-08-16 22:30:36.496 | INFO     | pages.ai_picks:_render_vcp:205 - VCP UI: Filtered out 1 low-score non-breakout setups
+2026-08-16 22:43:06.382 | INFO     | services.scan_runner:run_combined_scan_cached:109 - Running fresh combined scan...
+2026-08-16 22:43:06.386 | WARNING  | services.scan_runner:run_combined_scan_cached:117 - nest_asyncio not available
+2026-08-16 22:43:06.388 | INFO     | services.instruments:fetch_index_constituents:123 - Fetching fresh NIFTY 200 data from NSE...
+2026-08-16 22:43:07.333 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 22:43:09.782 | INFO     | services.instruments:fetch_index_constituents:153 - Loaded 200 constituents for NIFTY 200
+2026-08-16 22:43:09.782 | INFO     | services.scan_runner:_combined_scan:39 - Retrieved 200 symbols from Nifty200
+2026-08-16 22:44:10.979 | INFO     | services.scan_runner:_combined_scan:91 - Combined scan: VCP=11, Elder=118 from 200 stocks
+2026-08-16 22:44:10.979 | INFO     | services.scan_runner:run_combined_scan_cached:133 - Scan completed successfully
+2026-08-16 22:44:10.979 | INFO     | pages.ai_picks:_render_vcp:188 - VCP UI: Before filtering - 11 setups, 2 breakouts
+2026-08-16 22:44:10.991 | INFO     | pages.ai_picks:_render_vcp:204 - VCP UI: After filtering - 10 setups, 2 breakouts, 8 near pivot
+2026-08-16 22:44:10.995 | INFO     | pages.ai_picks:_render_vcp:205 - VCP UI: Filtered out 1 low-score non-breakout setups
+2026-08-16 22:55:57.890 | WARNING  | services.scan_runner:run_combined_scan_cached:104 - nest_asyncio not available - async operations may fail
+2026-08-16 22:55:58.771 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 22:56:01.005 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 22:56:01.005 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
+2026-08-16 22:57:02.769 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=11, Elder=118

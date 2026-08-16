@@ -176,33 +176,22 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict, key_prefix: s
 # -- VCP tab content -----------------------------------------------------------
 
 def _render_vcp(df: pd.DataFrame, chart_store: dict):
-    from loguru import logger
-
     if df is None or df.empty:
         st.info("No stocks currently meet the VCP criteria.")
         return
 
-    # Log pre-filter stats
-    total_before = len(df)
-    breakouts_before = len(df[df["is_breakout"] == True])
-    logger.info(f"VCP UI: Before filtering - {total_before} setups, {breakouts_before} breakouts")
-    
     # Filter: high score OR active breakout (don't filter out breakouts)
     score_threshold = 30
+    total_before = len(df)
     df = df[(df["vcp_score"] > score_threshold) | (df["is_breakout"] == True)]
     
     if df.empty:
         st.info(f"No stocks with VCP score above {score_threshold} or active breakouts.")
-        logger.warning(f"VCP UI: All {total_before} setups filtered out")
         return
 
     breakouts  = df[df["is_breakout"] == True]
     near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -20)]
     avg_score  = df["vcp_score"].mean()
-    
-    # Log post-filter stats
-    logger.info(f"VCP UI: After filtering - {len(df)} setups, {len(breakouts)} breakouts, {len(near_pivot)} near pivot")
-    logger.info(f"VCP UI: Filtered out {total_before - len(df)} low-score non-breakout setups")
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("VCP Setups",       len(df))
@@ -271,16 +260,33 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
 def render(slot):
     slot.empty()
     with slot.container():
+        # Add cache clear button
+        col1, col2 = st.columns([6, 1])
+        with col2:
+            if st.button("🔄 Refresh", key="refresh_scan"):
+                if "_combined_scan_result" in st.session_state:
+                    del st.session_state["_combined_scan_result"]
+                st.rerun()
+        
         ph = st.empty()
         ph.markdown(loading_html("Running AI scans..."), unsafe_allow_html=True)
+        
         try:
             vcp_df, vcp_charts, elder_df, elder_charts = run_combined_scan_cached()
         except Exception as e:
             ph.empty()
             st.error(f"Scan failed: {e}")
-            import traceback
-            st.code(traceback.format_exc())
+            with st.expander("Troubleshooting"):
+                st.markdown("""
+                **Common causes:**
+                - OAuth token expired (run `python api/oauth_helper.py`)
+                - Network connectivity issues
+                - API rate limiting
+                
+                **Check logs:** `logs/app.log`
+                """)
             return
+        
         ph.empty()
 
         tab_vcp, tab_elder = st.tabs(["VCP Scanner", "Elder Triple Screen"])
