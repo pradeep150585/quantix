@@ -88,7 +88,7 @@ def _build_vcp_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame):
 
 # -- VCP card renderer ---------------------------------------------------------
 
-def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict):
+def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict, key_prefix: str = ""):
     symbol  = row.get("symbol", "")
     
     # Skip if symbol not in chart store (data mismatch)
@@ -162,7 +162,7 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict):
                 fig = _build_vcp_chart(symbol, row, cdf)
                 st.plotly_chart(fig, use_container_width=True,
                                 config={"displayModeBar": False},
-                                key=f"vcp_chart_{symbol}_{rank}")
+                                key=f"vcp_chart_{key_prefix}{symbol}_{rank}")
             else:
                 st.info("Chart data unavailable.")
         else:
@@ -228,21 +228,21 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
             st.info("No setups in this category.")
         else:
             for rank, (_, row) in enumerate(df.head(20).iterrows(), 1):
-                _render_vcp_card(rank, row, chart_store)
+                _render_vcp_card(rank, row, chart_store, key_prefix="all_")
 
     with t2:
         if breakouts.empty:
             st.info("No active breakouts right now.")
         else:
             for rank, (_, row) in enumerate(breakouts.head(20).iterrows(), 1):
-                _render_vcp_card(rank, row, chart_store)
+                _render_vcp_card(rank, row, chart_store, key_prefix="bo_")
 
     with t3:
         if near_pivot.empty:
             st.info("No stocks near pivot right now.")
         else:
             for rank, (_, row) in enumerate(near_pivot.head(20).iterrows(), 1):
-                _render_vcp_card(rank, row, chart_store)
+                _render_vcp_card(rank, row, chart_store, key_prefix="np_")
 
 
 # -- Page entry point ----------------------------------------------------------
