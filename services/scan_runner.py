@@ -88,11 +88,22 @@ def run_combined_scan_cached():
     if _KEY in st.session_state:
         return st.session_state[_KEY]
 
-    loop = asyncio.new_event_loop()
     try:
+        import nest_asyncio
+        nest_asyncio.apply()
+    except ImportError:
+        pass
+
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         result = loop.run_until_complete(_combined_scan())
-    finally:
-        loop.close()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        result = loop.run_until_complete(_combined_scan())
 
     st.session_state[_KEY] = result
     return result

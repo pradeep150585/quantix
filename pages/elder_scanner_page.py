@@ -25,11 +25,21 @@ _ORANGE = "#fb923c"
 
 
 def _run(coro):
-    loop = asyncio.new_event_loop()
     try:
+        import nest_asyncio
+        nest_asyncio.apply()
+    except ImportError:
+        pass
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(coro)
 
 
 def _grade_color(g: str) -> str:
