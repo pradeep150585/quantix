@@ -333,7 +333,7 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
         if subset.empty:
             st.info("No setups in this category.")
             return
-        for _, row in subset.head(20).iterrows():
+        for rank, (_, row) in enumerate(subset.head(20).iterrows(), 1):
             _render_row(row, chart_store)
 
     with t_ap:  _tab(a_plus)

@@ -2,17 +2,19 @@
 Elder Triple Screen Swing Scanner — NSE 200
 Based on Alexander Elder's "Trading for a Living" framework.
 
-Screens:
+Screens (all on weekly timeframe):
   1. Weekly trend (MACD Histogram slope, EMA13, ADX, Force Index)
-  2. Daily pullback (Force Index 2-EMA, Elder-Ray Bear Power, Stochastic, Williams %R, RSI)
-  3. Price trigger + volume + R:R
+  2. Price action (higher lows, breakout structure)
+  3. Volume confirmation
+  4. Risk/Reward ratio
 
-Scoring (0-100, no double-counting):
-  Weekly Trend   30 pts
-  Daily Pullback 25 pts
-  Price Action   20 pts
-  Volume         10 pts
+Scoring (0-100):
+  Weekly Trend   35 pts
+  Price Action   30 pts
+  Volume         20 pts
   Risk/Reward    15 pts
+
+Uses weekly timeframe for stable swing trading setups.
 """
 from __future__ import annotations
 
@@ -29,22 +31,26 @@ _CHART_BARS = 120
 _MIN_RR     = 1.5
 
 
+def _resample_to_weekly(df: pd.DataFrame) -> pd.DataFrame:
+    """Resample daily OHLCV to weekly (week ending Friday)."""
+    if df.empty or "datetime" not in df.columns:
+        return df
+    df = df.set_index("datetime")
+    wdf = df.resample("W-FRI").agg(
+        open=("open", "first"),
+        high=("high", "max"),
+        low=("low", "min"),
+        close=("close", "last"),
+        volume=("volume", "sum"),
+    ).dropna()
+    wdf.index.name = "datetime"
+    return wdf.reset_index()
+
+
 # ── Low-level indicator helpers ───────────────────────────────────────────────
 
 def _ema(s: pd.Series, n: int) -> pd.Series:
     return s.ewm(span=n, adjust=False).mean()
-
-
-def _weekly(df: pd.DataFrame) -> pd.DataFrame:
-    """Resample daily OHLCV to weekly (week ending Friday)."""
-    df = df.set_index("datetime")
-    w = df.resample("W-FRI").agg(
-        open=("open", "first"), high=("high", "max"),
-        low=("low", "min"),   close=("close", "last"),
-        volume=("volume", "sum"),
-    ).dropna()
-    w.index.name = "datetime"
-    return w.reset_index()
 
 
 def _macd_hist(close: pd.Series, fast=12, slow=26, sig=9) -> pd.Series:
@@ -74,28 +80,6 @@ def _adx(df: pd.DataFrame, n: int = 13) -> tuple[pd.Series, pd.Series, pd.Series
     return adx_val, di_plus, di_minus
 
 
-def _stochastic(df: pd.DataFrame, k=5, d=3) -> tuple[pd.Series, pd.Series]:
-    lo  = df["low"].rolling(k).min()
-    hi  = df["high"].rolling(k).max()
-    pct_k = 100 * (df["close"] - lo) / (hi - lo + 1e-9)
-    pct_k = pct_k.rolling(d).mean()   # slow %K
-    pct_d = pct_k.rolling(d).mean()
-    return pct_k, pct_d
-
-
-def _williams_r(df: pd.DataFrame, n: int = 7) -> pd.Series:
-    hi = df["high"].rolling(n).max()
-    lo = df["low"].rolling(n).min()
-    return -100 * (hi - df["close"]) / (hi - lo + 1e-9)
-
-
-def _rsi(close: pd.Series, n: int = 14) -> pd.Series:
-    delta = close.diff()
-    gain  = delta.clip(lower=0).ewm(span=n, adjust=False).mean()
-    loss  = (-delta.clip(upper=0)).ewm(span=n, adjust=False).mean()
-    return 100 - 100 / (1 + gain / (loss + 1e-9))
-
-
 def _atr(df: pd.DataFrame, n: int = 14) -> pd.Series:
     tr = pd.concat([
         df["high"] - df["low"],
@@ -105,7 +89,7 @@ def _atr(df: pd.DataFrame, n: int = 14) -> pd.Series:
     return tr.rolling(n).mean()
 
 
-def _swing_lows(series: pd.Series, order: int = 5) -> list[int]:
+def _swing_lows(series: pd.Series, order: int = 2) -> list[int]:
     vals = series.values
     out  = []
     for i in range(order, len(vals) - order):
@@ -114,7 +98,7 @@ def _swing_lows(series: pd.Series, order: int = 5) -> list[int]:
     return out
 
 
-def _swing_highs(series: pd.Series, order: int = 5) -> list[int]:
+def _swing_highs(series: pd.Series, order: int = 2) -> list[int]:
     vals = series.values
     out  = []
     for i in range(order, len(vals) - order):
@@ -123,17 +107,16 @@ def _swing_highs(series: pd.Series, order: int = 5) -> list[int]:
     return out
 
 
-# ── Weekly Screen (30 pts) ────────────────────────────────────────────────────
+# ── Weekly Trend Screen (35 pts) ──────────────────────────────────────────────
 
 def _weekly_screen(wdf: pd.DataFrame) -> tuple[int, dict]:
-    """Returns (score 0-30, detail dict)."""
-    if len(wdf) < 30:
+    """Returns (score 0-35, detail dict)."""
+    if len(wdf) < 15:
         return 0, {}
 
     close  = wdf["close"]
     hist   = _macd_hist(close)
     ema13  = _ema(close, 13)
-    ema26  = _ema(close, 26)
     adx_v, di_plus, di_minus = _adx(wdf, 13)
     fi     = _force_index(wdf)
     fi13   = _ema(fi, 13)
@@ -153,47 +136,22 @@ def _weekly_screen(wdf: pd.DataFrame) -> tuple[int, dict]:
     adx_rising = adx_now > adx_prev
     fi13_pos = float(fi13.iloc[-1]) > 0
 
-    # Scoring (no double-count: MACD hist 10, EMA13 slope 5, price vs EMA 5, DI 4, ADX 3, FI 3)
     score = 0
-    # MACD Histogram slope (10 pts)
     if hist_rising:
         score += 10
-        if h_now < 0:   # bullish turn below zero — extra quality
-            score += 0  # already counted; flag it in detail
-    # EMA13 slope (5 pts)
     if ema13_rising:
-        score += 5
-    # Price vs EMA13 (5 pts)
+        score += 8
     if price_above_ema13:
-        score += 5
-    # +DI/-DI (4 pts)
+        score += 8
     if di_bull:
-        score += 4
-    # ADX (3 pts)
+        score += 5
     if adx_rising:
-        score += 3
-    # Force Index 13 (3 pts)
-    if fi13_pos:
-        score += 3
-
-    # Classify trend
-    if score >= 24:
-        trend = "STRONG BULLISH"
-    elif score >= 16:
-        trend = "BULLISH"
-    elif score >= 10:
-        trend = "NEUTRAL"
-    elif score >= 5:
-        trend = "BEARISH"
-    else:
-        trend = "STRONG BEARISH"
+        score += 4
 
     detail = {
         "weekly_score":       score,
-        "weekly_trend":       trend,
         "macd_hist_rising":   hist_rising,
         "macd_hist_now":      round(h_now, 4),
-        "macd_hist_below_zero": h_now < 0,
         "ema13_rising":       ema13_rising,
         "ema13":              round(ema13_now, 2),
         "price_above_ema13":  price_above_ema13,
@@ -202,105 +160,15 @@ def _weekly_screen(wdf: pd.DataFrame) -> tuple[int, dict]:
         "di_minus":           round(float(di_minus.iloc[-1]), 2),
         "adx":                round(adx_now, 2),
         "adx_rising":         adx_rising,
-        "weekly_fi13_pos":    fi13_pos,
     }
-    return score, detail
+    return min(score, 35), detail
 
 
-# ── Daily Screen (25 pts) ─────────────────────────────────────────────────────
-
-def _daily_screen(df: pd.DataFrame) -> tuple[int, dict]:
-    """Returns (score 0-25, detail dict)."""
-    if len(df) < 30:
-        return 0, {}
-
-    close  = df["close"]
-    ema13  = _ema(close, 13)
-    fi_raw = _force_index(df)
-    fi2    = _ema(fi_raw, 2)
-    fi13   = _ema(fi_raw, 13)
-
-    # Elder-Ray
-    bull_power = df["high"] - ema13
-    bear_power = df["low"]  - ema13
-
-    bp_now  = float(bear_power.iloc[-1])
-    bp_prev = float(bear_power.iloc[-2])
-    bear_power_rising = bp_now > bp_prev
-
-    fi2_now  = float(fi2.iloc[-1])
-    fi2_prev = float(fi2.iloc[-2])
-    fi2_neg_turning_up = fi2_now < 0 and fi2_now > fi2_prev
-
-    stoch_k, stoch_d = _stochastic(df)
-    sk_now = float(stoch_k.iloc[-1])
-    sd_now = float(stoch_d.iloc[-1])
-    stoch_oversold_turning = sk_now < 30 and sk_now > float(stoch_k.iloc[-2])
-
-    wr  = _williams_r(df)
-    wr_now  = float(wr.iloc[-1])
-    wr_prev = float(wr.iloc[-2])
-    wr_oversold_turning = wr_now < -80 and wr_now > wr_prev
-
-    rsi_s   = _rsi(close)
-    rsi_now = float(rsi_s.iloc[-1])
-    rsi_ok  = 40 <= rsi_now <= 70
-
-    daily_hist = _macd_hist(close)
-    dh_now  = float(daily_hist.iloc[-1])
-    dh_prev = float(daily_hist.iloc[-2])
-    daily_hist_turning = dh_now > dh_prev and dh_now < 0
-
-    # Scoring (FI2: 8, Bear Power: 6, Stoch: 4, WR: 3, RSI: 2, MACD hist: 2)
-    score = 0
-    if fi2_neg_turning_up:
-        score += 8
-    elif fi2_now < 0:
-        score += 4   # negative but not yet turning
-    if bp_now < 0 and bear_power_rising:
-        score += 6
-    elif bp_now < 0:
-        score += 3
-    if stoch_oversold_turning:
-        score += 4
-    elif sk_now < 40:
-        score += 2
-    if wr_oversold_turning:
-        score += 3
-    elif wr_now < -70:
-        score += 1
-    if rsi_ok:
-        score += 2
-    if daily_hist_turning:
-        score += 2
-
-    score = min(score, 25)
-
-    detail = {
-        "daily_score":           score,
-        "fi2_now":               round(fi2_now, 2),
-        "fi2_neg_turning_up":    fi2_neg_turning_up,
-        "bear_power":            round(bp_now, 2),
-        "bear_power_rising":     bear_power_rising,
-        "stoch_k":               round(sk_now, 1),
-        "stoch_d":               round(sd_now, 1),
-        "stoch_oversold_turning": stoch_oversold_turning,
-        "williams_r":            round(wr_now, 1),
-        "wr_oversold_turning":   wr_oversold_turning,
-        "rsi":                   round(rsi_now, 1),
-        "daily_hist_turning":    daily_hist_turning,
-        "ema13_daily":           round(float(ema13.iloc[-1]), 2),
-    }
-    return score, detail
-
-
-# ── Price Action Screen (20 pts) ──────────────────────────────────────────────
+# ── Price Action Screen (30 pts) ──────────────────────────────────────────────
 
 def _price_action_screen(df: pd.DataFrame) -> tuple[int, dict, float, float, float]:
-    """
-    Returns (score 0-20, detail, entry_trigger, stop_price, nearest_resistance).
-    """
-    if len(df) < 30:
+    """Returns (score 0-30, detail, entry, stop, resistance)."""
+    if len(df) < 10:
         return 0, {}, 0.0, 0.0, 0.0
 
     close = df["close"]
@@ -309,51 +177,47 @@ def _price_action_screen(df: pd.DataFrame) -> tuple[int, dict, float, float, flo
     cmp   = float(close.iloc[-1])
 
     # Swing structure
-    sh_idx = _swing_highs(high, order=5)
-    sl_idx = _swing_lows(low,   order=5)
+    sh_idx = _swing_highs(high, order=2)
+    sl_idx = _swing_lows(low, order=2)
 
     recent_sh = float(high.iloc[sh_idx[-1]]) if sh_idx else cmp * 1.05
     recent_sl = float(low.iloc[sl_idx[-1]])  if sl_idx else cmp * 0.95
 
-    # Higher-low structure: last swing low > second-last swing low
+    # Higher-low structure
     higher_low = False
     if len(sl_idx) >= 2:
         higher_low = float(low.iloc[sl_idx[-1]]) > float(low.iloc[sl_idx[-2]])
 
-    # 20-day high breakout
-    high20 = float(high.tail(20).max())
-    breakout_20d = cmp >= high20 * 0.995
+    # 5-bar high breakout
+    high5 = float(high.tail(5).max())
+    breakout_5b = cmp >= high5 * 0.995
 
-    # Resistance = recent swing high or 20-day high
-    resistance = max(recent_sh, high20)
-
-    # Entry trigger = recent swing high + 0.2% buffer
+    # Resistance
+    resistance = max(recent_sh, high5)
     entry = round(resistance * 1.002, 2)
-
-    # Stop = recent swing low
     stop = round(recent_sl * 0.998, 2)
 
     # False breakout check
-    prev_close = float(close.iloc[-2])
     intraday_spike = float(high.iloc[-1]) > resistance and cmp < resistance
-    false_bo_risk = "HIGH" if intraday_spike else ("MEDIUM" if breakout_20d and cmp < resistance else "LOW")
+    false_bo_risk = "HIGH" if intraday_spike else (
+        "MEDIUM" if breakout_5b and cmp < resistance else "LOW"
+    )
 
     # Scoring
     score = 0
     if higher_low:
-        score += 6
-    if breakout_20d:
-        score += 6
+        score += 10
+    if breakout_5b:
+        score += 10
     if not intraday_spike:
-        score += 4
+        score += 5
     if cmp > float(_ema(close, 13).iloc[-1]):
-        score += 4
-    score = min(score, 20)
+        score += 5
 
     detail = {
-        "pa_score":       score,
+        "pa_score":       min(score, 30),
         "higher_low":     higher_low,
-        "breakout_20d":   breakout_20d,
+        "breakout_5b":    breakout_5b,
         "recent_sh":      round(recent_sh, 2),
         "recent_sl":      round(recent_sl, 2),
         "resistance":     round(resistance, 2),
@@ -361,40 +225,38 @@ def _price_action_screen(df: pd.DataFrame) -> tuple[int, dict, float, float, flo
         "entry":          entry,
         "stop":           round(stop, 2),
     }
-    return score, detail, entry, stop, resistance
+    return min(score, 30), detail, entry, stop, resistance
 
 
-# ── Volume Screen (10 pts) ────────────────────────────────────────────────────
+# ── Volume Screen (20 pts) ────────────────────────────────────────────────────
 
 def _volume_screen(df: pd.DataFrame, breakout: bool) -> tuple[int, dict]:
-    if len(df) < 21:
+    if len(df) < 5:
         return 0, {}
     vol     = df["volume"]
     vol_now = float(vol.iloc[-1])
-    vol20   = float(vol.tail(21).iloc[:-1].mean())
-    rvol    = vol_now / vol20 if vol20 else 1.0
+    vol_avg = float(vol.tail(5).mean())
+    rvol    = vol_now / vol_avg if vol_avg else 1.0
 
-    # Pullback: volume should be declining
-    vol5    = float(vol.tail(5).mean())
-    pullback_vol_ok = vol5 < vol20
+    vol_declining = float(vol.tail(3).mean()) < vol_avg
 
     score = 0
-    if breakout and rvol >= 1.5:
+    if breakout and rvol >= 1.3:
+        score += 15
+    elif breakout and rvol >= 1.1:
         score += 10
-    elif breakout and rvol >= 1.2:
-        score += 6
-    elif not breakout and pullback_vol_ok:
-        score += 7
+    elif not breakout and vol_declining:
+        score += 12
     elif not breakout:
-        score += 4
+        score += 8
 
     detail = {
-        "vol_score":        min(score, 10),
+        "vol_score":        min(score, 20),
         "rvol":             round(rvol, 2),
-        "vol20_avg":        round(vol20, 0),
-        "pullback_vol_ok":  pullback_vol_ok,
+        "vol_avg":          round(vol_avg, 0),
+        "vol_declining":    vol_declining,
     }
-    return min(score, 10), detail
+    return min(score, 20), detail
 
 
 # ── Risk/Reward Screen (15 pts) ───────────────────────────────────────────────
@@ -409,7 +271,6 @@ def _rr_screen(cmp: float, entry: float, stop: float,
     target2    = entry + 2.5 * (entry - stop)
     rr         = (target1 - entry) / (entry - stop)
 
-    # Resistance check: is target1 blocked by resistance?
     dist_to_res = (resistance - entry) / entry * 100 if resistance > entry else 100.0
 
     score = 0
@@ -420,7 +281,6 @@ def _rr_screen(cmp: float, entry: float, stop: float,
     elif rr >= 1.0:
         score += 5
 
-    # Penalise if resistance is too close
     if dist_to_res < 2.0:
         score = max(0, score - 8)
     elif dist_to_res < 4.0:
@@ -459,55 +319,46 @@ def _grade(score: int) -> str:
 
 # ── Per-stock analysis ────────────────────────────────────────────────────────
 
-def _analyse(df: pd.DataFrame, symbol: str, company: str,
+def _analyse(wdf: pd.DataFrame, symbol: str, company: str,
              sector: str, ikey: str, live_ltp: float) -> dict | None:
-    if df.empty or len(df) < 60:
-        return None
-
-    wdf = _weekly(df)
-    if len(wdf) < 15:
+    if wdf.empty or len(wdf) < 15:
         return None
 
     w_score, w_det = _weekly_screen(wdf)
-    trend = w_det.get("weekly_trend", "NEUTRAL")
-
-    # Reject non-bullish weekly trends
-    if trend in ("BEARISH", "STRONG BEARISH", "NEUTRAL"):
+    if w_score < 15:
         return None
 
-    d_score, d_det = _daily_screen(df)
-    # Require at least one strong daily pullback signal
-    if d_score < 6:
+    pa_score, pa_det, entry, stop, resistance = _price_action_screen(wdf)
+    if pa_score < 10:
         return None
 
-    pa_score, pa_det, entry, stop, resistance = _price_action_screen(df)
-    breakout = pa_det.get("breakout_20d", False)
-    v_score,  v_det  = _volume_screen(df, breakout)
+    breakout = pa_det.get("breakout_5b", False)
+    v_score,  v_det  = _volume_screen(wdf, breakout)
 
-    cmp = live_ltp if live_ltp > 0 else float(df["close"].iloc[-1])
+    close = wdf["close"]
+    cmp = live_ltp if live_ltp > 0 else float(close.iloc[-1])
     rr_score, rr_det = _rr_screen(cmp, entry, stop, resistance)
 
     if rr_det.get("signal") == "NO TRADE":
         return None
 
-    total = w_score + d_score + pa_score + v_score + rr_score
+    total = w_score + pa_score + v_score + rr_score
 
-    close  = df["close"]
-    prev   = float(close.iloc[-2]) if len(df) > 1 else cmp
+    prev   = float(close.iloc[-2]) if len(wdf) > 1 else cmp
     pct    = round((cmp - prev) / prev * 100, 2) if prev else 0.0
 
-    atr_s  = _atr(df)
+    atr_s  = _atr(wdf)
     atr_v  = round(float(atr_s.iloc[-1]), 2)
 
-    high52 = float(df["high"].tail(252).max())
-    low52  = float(df["low"].tail(252).min())
+    high52 = float(wdf["high"].tail(52).max())
+    low52  = float(wdf["low"].tail(52).min())
     dist52h = round((cmp - high52) / high52 * 100, 2) if high52 else 0.0
 
     # Chart data
-    chart_df = df.tail(_CHART_BARS).copy().reset_index(drop=True)
+    chart_df = wdf.tail(_CHART_BARS).copy().reset_index(drop=True)
     chart_df["ema13"]  = _ema(close, 13).tail(_CHART_BARS).values
     chart_df["ema26"]  = _ema(close, 26).tail(_CHART_BARS).values
-    chart_df["fi2"]    = _ema(_force_index(df), 2).tail(_CHART_BARS).values
+    chart_df["fi2"]    = _ema(_force_index(wdf), 2).tail(_CHART_BARS).values
     chart_df["macd_h"] = _macd_hist(close).tail(_CHART_BARS).values
 
     return {
@@ -533,13 +384,11 @@ def _analyse(df: pd.DataFrame, symbol: str, company: str,
         "false_bo_risk": pa_det["false_bo_risk"],
         # sub-scores
         "weekly_score":  w_score,
-        "daily_score":   d_score,
         "pa_score":      pa_score,
         "vol_score":     v_score,
         "rr_score":      rr_score,
-        # detail dicts for explanation panel
+        # detail dicts
         "_weekly":       w_det,
-        "_daily":        d_det,
         "_pa":           pa_det,
         "_vol":          v_det,
         "_rr":           rr_det,
@@ -557,8 +406,11 @@ async def _process(row: pd.Series, ltp_map: dict,
         ikey   = row.get("instrument_key", f"NSE_EQ|{isin}")
         try:
             df       = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
+            wdf      = _resample_to_weekly(df)
+            if wdf.empty or len(wdf) < 15:
+                return None
             live_ltp = ltp_map.get(ikey, {}).get("last_price", 0.0)
-            return _analyse(df, symbol, row.get("company_name", symbol),
+            return _analyse(wdf, symbol, row.get("company_name", symbol),
                             row.get("sector", ""), ikey, live_ltp)
         except Exception as e:
             logger.debug(f"Elder scan error {symbol}: {e}")
@@ -589,7 +441,6 @@ async def run_elder_scan() -> tuple[pd.DataFrame, dict]:
 
     for r in records:
         chart_store[r["symbol"]] = r.pop("_chart_df")
-        # keep detail dicts in the record for the explanation panel
         clean.append(r)
 
     if not clean:

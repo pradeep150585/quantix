@@ -113,13 +113,14 @@ class UpstoxClient:
                 combined.update(result.get("data", {}))
         return combined
 
-    async def get_ohlc(self, instrument_keys: list[str], interval: str = "1day") -> Optional[dict]:
+    async def get_ohlc(self, instrument_keys: list[str]) -> Optional[dict]:
+        """Get today's OHLC with 1d interval."""
         if not instrument_keys:
             return {}
         chunks = [instrument_keys[i:i+500] for i in range(0, len(instrument_keys), 500)]
         combined = {}
         for chunk in chunks:
-            params = {"instrument_key": ",".join(chunk), "interval": interval}
+            params = {"instrument_key": ",".join(chunk), "interval": "1d"}
             result = await self.get("/market-quote/ohlc", params=params)
             if result and result.get("status") == "success":
                 combined.update(result.get("data", {}))

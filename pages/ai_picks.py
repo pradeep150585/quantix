@@ -5,6 +5,7 @@ import asyncio
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
+import plotly.graph_objects as go
 from services.vcp_scanner import run_vcp_scan
 from components.ui import loading_html
 import pages.elder_scanner_page as elder_page
@@ -34,60 +35,146 @@ def _score_color(s: float) -> str:
     return _GREEN if s >= 75 else (_YELLOW if s >= 50 else _RED)
 
 
-# -- VCP table ----------------------------------------------------------------
+# -- VCP chart builder ---------------------------------------------------------
 
-def _build_vcp_table_html(df: pd.DataFrame) -> str:
-    headers = ["#", "Symbol", "Score", "CMP", "Entry", "Stop", "Vol", "52W%"]
-    th = "".join(
-        f'<th style="background:#131722;color:#9ca3af;font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:8px 6px;border-bottom:1px solid #1e2433;">{h}</th>'
-        for h in headers
+def _build_vcp_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figure:
+    if cdf.empty:
+        return go.Figure()
+
+    dates = cdf["datetime"] if "datetime" in cdf.columns else pd.RangeIndex(len(cdf))
+    entry = row.get("entry_price", 0)
+    stop  = row.get("stop_loss", 0)
+    pivot = row.get("pivot", 0)
+
+    fig = go.Figure()
+
+    # Candlestick
+    fig.add_trace(go.Candlestick(
+        x=dates, open=cdf["open"], high=cdf["high"],
+        low=cdf["low"], close=cdf["close"],
+        increasing_line_color=_GREEN, increasing_fillcolor="#0d2b1a",
+        decreasing_line_color=_RED,   decreasing_fillcolor="#2b0d0d",
+        line_width=1, name="Price",
+    ))
+
+    # Moving averages
+    if "wma10" in cdf.columns:
+        fig.add_trace(go.Scatter(x=dates, y=cdf["wma10"],
+            line=dict(color=_BLUE, width=1.2), name="WMA 10"))
+    if "wma30" in cdf.columns:
+        fig.add_trace(go.Scatter(x=dates, y=cdf["wma30"],
+            line=dict(color=_PURPLE, width=1, dash="dot"), name="WMA 30"))
+
+    # Entry, Stop, Pivot lines
+    for price, color, label in [
+        (pivot, _YELLOW, f"Pivot Rs{pivot:,.2f}"),
+        (entry, _GREEN,  f"Entry Rs{entry:,.2f}"),
+        (stop,  _RED,    f"Stop Rs{stop:,.2f}"),
+    ]:
+        if price > 0:
+            fig.add_hline(y=price, line=dict(color=color, width=1.2, dash="dash"),
+                annotation_text=f"  {label}",
+                annotation_position="right",
+                annotation_font=dict(color=color, size=9))
+
+    fig.update_layout(
+        paper_bgcolor=_BG, plot_bgcolor=_BG,
+        font=dict(color=_TEXT, size=9, family="Inter"),
+        margin=dict(l=0, r=50, t=20, b=0), height=350,
+        showlegend=False,
+        xaxis_rangeslider_visible=False,
+        title=dict(text=f"{symbol} - VCP Pattern",
+                   font=dict(size=11, color=_WHITE), x=0),
     )
-    rows_html = ""
-    for i, (_, row) in enumerate(df.iterrows()):
-        score   = row.get("vcp_score", 0)
-        score_c = _score_color(score)
-        is_bo   = row.get("is_breakout", False)
-        pivot   = row.get("pivot", 0)
-        entry   = row.get("entry_price", pivot if pivot > 0 else row.get("cmp", 0))
-        stop    = row.get("stop_loss", 0)
-        vr      = row.get("volume_ratio", 0)
-        d52     = row.get("dist_52h_pct", 0)
-        bg = "rgba(0,200,83,.06)" if is_bo else "transparent"
-        bo_badge = '<span style="color:#00c853;font-weight:700;font-size:.55rem;">BO</span>' if is_bo else ""
-        td = 'style="padding:7px 6px;border-bottom:1px solid #131722;font-size:.7rem;"'
-        cells = [
-            f'<td {td}><span style="color:#4a5568;">{i+1}</span></td>',
-            f'<td {td}><span style="color:#fff;font-weight:600;">{row.get("symbol","")}</span> {bo_badge}</td>',
-            f'<td {td}><span style="color:{score_c};font-weight:700;">{score:.0f}</span></td>',
-            f'<td {td}><span style="color:#d1d4dc;">&#8377;{row.get("cmp",0):,.0f}</span></td>',
-            f'<td {td}><span style="color:#00c853;font-weight:600;">&#8377;{entry:,.0f}</span></td>',
-            f'<td {td}><span style="color:#ef4444;">&#8377;{stop:,.0f}</span></td>',
-            f'<td {td}><span style="color:#d1d4dc;">{vr:.1f}x</span></td>',
-            f'<td {td}><span style="color:#d1d4dc;">{d52:.0f}%</span></td>',
-        ]
-        rows_html += f'<tr style="background:{bg};">{"".join(cells)}</tr>\n'
+    ax = dict(gridcolor=_BORDER, zerolinecolor=_BORDER,
+              tickfont=dict(color=_MUTED, size=9), showgrid=True)
+    fig.update_xaxes(**ax)
+    fig.update_yaxes(**ax)
+    return fig
 
-    return f"""<!DOCTYPE html><html><head>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif}}
-table{{border-collapse:collapse;width:100%;table-layout:fixed}}
-::-webkit-scrollbar{{width:2px;height:2px}}
-::-webkit-scrollbar-track{{background:#0b0e17}}
-::-webkit-scrollbar-thumb{{background:#2d3748;border-radius:1px}}
-</style></head><body>
-<table>
-<thead><tr>{th}</tr></thead>
-<tbody>{rows_html}</tbody>
-</table>
-</body></html>"""
+
+# -- VCP card renderer ---------------------------------------------------------
+
+def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict):
+    symbol  = row.get("symbol", "")
+    score   = row.get("vcp_score", 0)
+    cmp     = row.get("cmp", 0)
+    entry   = row.get("entry_price", 0)
+    stop    = row.get("stop_loss", 0)
+    is_bo   = row.get("is_breakout", False)
+    vr      = row.get("volume_ratio", 0)
+    squeeze = row.get("squeeze", False)
+    dryup   = row.get("vol_dryup", False)
+    contractions = row.get("contractions", 0)
+    pct     = row.get("pct_change", 0)
+    pct_c   = _GREEN if pct > 0 else (_RED if pct < 0 else _MUTED)
+    pct_s   = f"+{pct:.2f}%" if pct > 0 else f"{pct:.2f}%"
+    score_c = _score_color(score)
+
+    badges = []
+    if is_bo: badges.append("Breakout")
+    if squeeze: badges.append("Squeeze")
+    if dryup: badges.append("Vol Dry-up")
+    if contractions >= 3: badges.append(f"{contractions}-Stage")
+
+    label = f"{symbol}  |  Rs{cmp:,.0f}  {pct_s}  |  Entry: Rs{entry:,.0f}  |  Score {score:.0f}"
+
+    with st.expander(label, expanded=False):
+        # Header metrics
+        components.html(f"""<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}}</style>
+</head><body style="background:#0b0e17;padding:0;">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:100px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">CMP</div>
+    <div style="font-size:.9rem;font-weight:700;color:#fff;">Rs{cmp:,.0f}
+      <span style="font-size:.65rem;color:{pct_c};margin-left:4px;">{pct_s}</span></div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:100px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Entry</div>
+    <div style="font-size:.9rem;font-weight:700;color:#00c853;">Rs{entry:,.0f}</div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:100px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Stop</div>
+    <div style="font-size:.9rem;font-weight:700;color:#ef4444;">Rs{stop:,.0f}</div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:100px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Vol Ratio</div>
+    <div style="font-size:.9rem;font-weight:700;color:#d1d4dc;">{vr:.2f}x</div>
+  </div>
+  <div style="background:{score_c}18;border:1px solid {score_c}44;border-radius:4px;padding:8px 12px;min-width:80px;text-align:center;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Score</div>
+    <div style="font-size:1.1rem;font-weight:800;color:{score_c};">{score:.0f}</div>
+  </div>
+</div>
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+  {"".join(f'<span style="background:#a78bfa18;color:#a78bfa;border:1px solid #a78bfa44;border-radius:3px;padding:3px 8px;font-size:.65rem;font-weight:600;">{b}</span>' for b in badges)}
+</div>
+<div style="font-size:.67rem;color:#6b7280;">
+  {row.get("company_name","")} - {row.get("sector","")}
+</div>
+</body></html>""", height=130, scrolling=False)
+
+        # Chart
+        chart_data = chart_store.get(symbol)
+        if chart_data is not None:
+            cdf = chart_data.get("df") if isinstance(chart_data, dict) else chart_data
+            if cdf is not None and not cdf.empty:
+                fig = _build_vcp_chart(symbol, row, cdf)
+                st.plotly_chart(fig, use_container_width=True,
+                                config={"displayModeBar": False},
+                                key=f"vcp_chart_{symbol}_{rank}")
+            else:
+                st.info("Chart data unavailable.")
+        else:
+            st.info("Chart data unavailable.")
 
 
 # -- VCP tab content -----------------------------------------------------------
 
 def _render_vcp():
-    st.empty()  # Clear any lingering components
+    st.empty()
     ph = st.empty()
     ph.markdown(loading_html("Scanning for VCP setups..."), unsafe_allow_html=True)
     try:
@@ -142,28 +229,34 @@ def _render_vcp():
         f"Active Breakouts ({len(breakouts)})",
         f"Near Pivot ({len(near_pivot)})",
     ])
+
     with t1:
-        components.html(_build_vcp_table_html(df.head(50)), height=500, scrolling=False)
+        for rank, (_, row) in enumerate(df.head(20).iterrows(), 1):
+            _render_vcp_card(rank, row, chart_store)
+
     with t2:
         if breakouts.empty:
             st.info("No active breakouts right now.")
         else:
-            components.html(_build_vcp_table_html(breakouts.head(50)), height=500, scrolling=False)
+            for rank, (_, row) in enumerate(breakouts.head(20).iterrows(), 1):
+                _render_vcp_card(rank, row, chart_store)
+
     with t3:
         if near_pivot.empty:
             st.info("No stocks near pivot right now.")
         else:
-            components.html(_build_vcp_table_html(near_pivot.head(50)), height=500, scrolling=False)
+            for rank, (_, row) in enumerate(near_pivot.head(20).iterrows(), 1):
+                _render_vcp_card(rank, row, chart_store)
 
 
 # -- Page entry point ----------------------------------------------------------
 
 def render(slot):
     slot.empty()
-    st.empty()  # Clear lingering components
+    st.empty()
     slot.markdown(loading_html("Loading AI scanner..."), unsafe_allow_html=True)
     slot.empty()
-    st.empty()  # Clear again before tabs
+    st.empty()
     tab_vcp, tab_elder = st.tabs(["VCP Scanner", "Elder Triple Screen"])
     with tab_vcp:
         _render_vcp()

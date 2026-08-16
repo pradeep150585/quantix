@@ -109,7 +109,7 @@ async def bulk_prefetch_today_ohlc(instrument_keys: list[str]) -> int:
 
     today_str = date.today().strftime("%Y-%m-%d")
     client = get_client()
-    raw = await client.get_ohlc(instrument_keys, interval="day")
+    raw = await client.get_ohlc(instrument_keys)
     if not raw:
         return 0
 

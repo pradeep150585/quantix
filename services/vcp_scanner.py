@@ -2,11 +2,13 @@
 VCP (Volatility Contraction Pattern) Scanner for AI Picks.
 
 Criteria:
-1. Stage-2 uptrend: close > 50 DMA > 150 DMA
+1. Stage-2 uptrend: close > 10 WMA > 30 WMA (weekly equivalent)
 2. 2-4 successive price contractions (each smaller than previous)
 3. Volatility squeeze: ATR(14) contracting + BB width near multi-month low
-4. Volume dry-up during final contraction vs 50-day avg
-5. Breakout: close > pivot high with volume >= 1.5x 20-day avg
+4. Volume dry-up during final contraction
+5. Breakout: close > pivot high with volume >= 1.5x avg
+
+Uses weekly timeframe for more stable patterns.
 """
 import asyncio
 import numpy as np
@@ -24,25 +26,41 @@ from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, ge
 
 _HIST_DAYS        = 300
 _CHART_BARS       = 120   # bars to keep for charting
-_LOOKBACK         = 60    # swing detection window
+_LOOKBACK         = 20    # swing detection window (reduced for weekly)
 _MIN_CONTRACTIONS = 2
 _MAX_CONTRACTIONS = 4
+
+
+def _resample_to_weekly(df: pd.DataFrame) -> pd.DataFrame:
+    """Resample daily OHLCV to weekly (week ending Friday)."""
+    if df.empty or "datetime" not in df.columns:
+        return df
+    df = df.set_index("datetime")
+    wdf = df.resample("W-FRI").agg(
+        open=("open", "first"),
+        high=("high", "max"),
+        low=("low", "min"),
+        close=("close", "last"),
+        volume=("volume", "sum"),
+    ).dropna()
+    wdf.index.name = "datetime"
+    return wdf.reset_index()
 
 
 # ── Trend ─────────────────────────────────────────────────────────────────────
 
 def _stage2_uptrend(df: pd.DataFrame) -> bool:
-    if len(df) < 150:
+    if len(df) < 15:
         return False
     close  = df["close"]
-    sma50  = close.rolling(50).mean().iloc[-1]
-    sma150 = close.rolling(150).mean().iloc[-1]
-    return bool(close.iloc[-1] > sma50 > sma150)
+    wma10  = close.rolling(10).mean().iloc[-1]
+    wma30  = close.rolling(30).mean().iloc[-1]
+    return bool(close.iloc[-1] > wma10 > wma30)
 
 
 # ── Swing detection ───────────────────────────────────────────────────────────
 
-def _swing_highs(series: np.ndarray, order: int = 5) -> list[int]:
+def _swing_highs(series: np.ndarray, order: int = 3) -> list[int]:
     if _HAS_SCIPY:
         return list(argrelextrema(series, np.greater_equal, order=order)[0])
     out = []
@@ -52,7 +70,7 @@ def _swing_highs(series: np.ndarray, order: int = 5) -> list[int]:
     return out
 
 
-def _swing_lows(series: np.ndarray, order: int = 5) -> list[int]:
+def _swing_lows(series: np.ndarray, order: int = 3) -> list[int]:
     if _HAS_SCIPY:
         return list(argrelextrema(series, np.less_equal, order=order)[0])
     out = []
@@ -73,8 +91,8 @@ def _detect_contractions(df: pd.DataFrame) -> tuple[list[float], float, list[int
     highs = sub["high"].values
     lows  = sub["low"].values
 
-    hi_idx = _swing_highs(highs)
-    lo_idx = _swing_lows(lows)
+    hi_idx = _swing_highs(highs, order=2)
+    lo_idx = _swing_lows(lows, order=2)
 
     if len(hi_idx) < 2 or len(lo_idx) < 1:
         return [], 0.0, hi_idx, lo_idx
@@ -106,41 +124,43 @@ def _contractions_valid(contractions: list[float]) -> bool:
     for i in range(1, n):
         if contractions[i] >= contractions[i - 1]:
             return False
-    return contractions[0] >= 4.0
+    return contractions[0] >= 3.0  # Reduced threshold for weekly
 
 
 # ── Other criteria ────────────────────────────────────────────────────────────
 
 def _volatility_squeeze(df: pd.DataFrame) -> bool:
-    if len(df) < 60:
+    if len(df) < 10:
         return False
     close = df["close"]
     hl    = df["high"] - df["low"]
     hc    = (df["high"] - close.shift()).abs()
     lc    = (df["low"]  - close.shift()).abs()
-    atr   = pd.concat([hl, hc, lc], axis=1).max(axis=1).rolling(14).mean()
-    if atr.iloc[-1] >= atr.iloc[-20]:
+    atr   = pd.concat([hl, hc, lc], axis=1).max(axis=1).rolling(7).mean()
+    if len(atr) < 7:
         return False
-    sma20    = close.rolling(20).mean()
-    std20    = close.rolling(20).std()
-    bb_width = (4 * std20 / sma20).dropna()
-    if len(bb_width) < 60:
+    if atr.iloc[-1] >= atr.iloc[-5]:
+        return False
+    sma10    = close.rolling(10).mean()
+    std10    = close.rolling(10).std()
+    bb_width = (4 * std10 / sma10).dropna()
+    if len(bb_width) < 5:
         return True
-    return bool(bb_width.iloc[-1] <= bb_width.tail(60).min() * 1.15)
+    return bool(bb_width.iloc[-1] <= bb_width.tail(10).min() * 1.15)
 
 
 def _volume_dryup(df: pd.DataFrame) -> bool:
-    if len(df) < 50:
+    if len(df) < 5:
         return False
-    return bool(df["volume"].tail(10).mean() < df["volume"].tail(51).iloc[:-1].mean())
+    return bool(df["volume"].tail(3).mean() < df["volume"].tail(8).iloc[:-1].mean())
 
 
 def _breakout_signal(df: pd.DataFrame, pivot: float) -> tuple[bool, float]:
-    if pivot <= 0 or len(df) < 21:
+    if pivot <= 0 or len(df) < 3:
         return False, 0.0
-    vol_20avg = df["volume"].tail(21).iloc[:-1].mean()
-    vol_ratio = df["volume"].iloc[-1] / vol_20avg if vol_20avg else 0.0
-    is_bo     = bool(df["close"].iloc[-1] > pivot and vol_ratio >= 1.5)
+    vol_avg = df["volume"].tail(3).mean()
+    vol_ratio = df["volume"].iloc[-1] / vol_avg if vol_avg else 0.0
+    is_bo     = bool(df["close"].iloc[-1] > pivot and vol_ratio >= 1.3)
     return is_bo, round(vol_ratio, 2)
 
 
@@ -150,12 +170,12 @@ def _vcp_score(contractions: list[float], vol_ratio: float,
     n = len(contractions)
     if n >= 2: score += 20
     if n >= 3: score += 10
-    if n >= 2 and contractions[-1] < 6: score += 10
+    if n >= 2 and contractions[-1] < 5: score += 10
     if squeeze:     score += 20
     if dryup:       score += 15
     if is_breakout:
         score += 15
-        score += min(10, (vol_ratio - 1.5) / 0.5 * 10)
+        score += min(10, (vol_ratio - 1.3) / 0.5 * 10)
     return round(min(score, 100), 1)
 
 
@@ -164,7 +184,7 @@ def _vcp_score(contractions: list[float], vol_ratio: float,
 def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
                    sector: str, instrument_key: str,
                    live_ltp: float = 0.0) -> dict | None:
-    if df.empty or len(df) < 150:
+    if df.empty or len(df) < 15:
         return None
     if not _stage2_uptrend(df):
         return None
@@ -184,17 +204,17 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
     prev   = float(close.iloc[-2]) if len(df) > 1 else cmp
     pct    = round((cmp - prev) / prev * 100, 2) if prev else 0.0
 
-    sma50  = float(close.rolling(50).mean().iloc[-1])
-    sma150 = float(close.rolling(150).mean().iloc[-1])
-    vol_20 = df["volume"].tail(21).iloc[:-1].mean()
+    wma10  = float(close.rolling(10).mean().iloc[-1])
+    wma30  = float(close.rolling(30).mean().iloc[-1])
+    vol_avg = df["volume"].tail(3).mean()
 
     hl  = df["high"] - df["low"]
     hc  = (df["high"] - close.shift()).abs()
     lc  = (df["low"]  - close.shift()).abs()
-    atr = round(float(pd.concat([hl, hc, lc], axis=1).max(axis=1).rolling(14).mean().iloc[-1]), 2)
+    atr = round(float(pd.concat([hl, hc, lc], axis=1).max(axis=1).rolling(7).mean().iloc[-1]), 2)
 
-    high52  = float(df["high"].tail(252).max())
-    low52   = float(df["low"].tail(252).min())
+    high52  = float(df["high"].tail(52).max())
+    low52   = float(df["low"].tail(52).min())
     dist52h = round((cmp - high52) / high52 * 100, 2) if high52 else 0.0
 
     badges = []
@@ -203,10 +223,10 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
     if dryup:               badges.append("Vol Dry-up")
     if len(contractions) >= 3: badges.append(f"{len(contractions)}-Stage VCP")
 
-    # Chart data: last _CHART_BARS bars, with SMA columns pre-computed
+    # Chart data: last _CHART_BARS bars, with WMA columns pre-computed
     chart_df = df.tail(_CHART_BARS).copy().reset_index(drop=True)
-    chart_df["sma50"]  = close.rolling(50).mean().tail(_CHART_BARS).values
-    chart_df["sma150"] = close.rolling(150).mean().tail(_CHART_BARS).values
+    chart_df["wma10"]  = close.rolling(10).mean().tail(_CHART_BARS).values
+    chart_df["wma30"] = close.rolling(30).mean().tail(_CHART_BARS).values
 
     # Swing indices relative to chart_df (offset from full df tail)
     offset      = max(0, len(df) - _LOOKBACK)
@@ -229,14 +249,14 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         "contractions":     len(contractions),
         "contraction_pcts": [round(c, 1) for c in contractions],
         "pivot":            round(pivot, 2),
-        "entry_price":      round(pivot * 1.005, 2) if pivot > 0 else round(cmp, 2),  # 0.5% above pivot
+        "entry_price":      round(pivot * 1.005, 2) if pivot > 0 else round(cmp, 2),
         "stop_loss":        round(pivot * (1 - atr / cmp) if cmp > 0 else pivot * 0.95, 2),
         "is_breakout":      is_bo,
-        "volume_ratio":     vr if is_bo else round(df["volume"].iloc[-1] / vol_20, 2) if vol_20 else 1.0,
+        "volume_ratio":     vr if is_bo else round(df["volume"].iloc[-1] / vol_avg, 2) if vol_avg else 1.0,
         "vol_dryup":        dryup,
         "squeeze":          squeeze,
-        "sma50":            round(sma50, 2),
-        "sma150":           round(sma150, 2),
+        "wma10":            round(wma10, 2),
+        "wma30":            round(wma30, 2),
         "atr":              atr,
         "high_52w":         round(high52, 2),
         "low_52w":          round(low52, 2),
@@ -259,9 +279,12 @@ async def _process(row: pd.Series, ltp_map: dict,
         ikey   = row.get("instrument_key", f"NSE_EQ|{isin}")
         try:
             df       = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
+            wdf      = _resample_to_weekly(df)
+            if wdf.empty or len(wdf) < 15:
+                return None
             live_ltp = ltp_map.get(ikey, {}).get("last_price", 0.0)
-            return _analyse_stock(df, symbol, row.get("company_name", symbol),
-                                  row.get("sector", ""), ikey, live_ltp)
+            return _analyse_stock(wdf, symbol, row.get("company_name", symbol),
+                                row.get("sector", ""), ikey, live_ltp)
         except Exception as e:
             logger.debug(f"VCP scan error {symbol}: {e}")
             return None

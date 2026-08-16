@@ -70,6 +70,22 @@ def _save_scan_to_db(today: str, df: pd.DataFrame):
         logger.warning(f"Could not save scan to DB: {e}")
 
 
+def _resample_to_weekly(df: pd.DataFrame) -> pd.DataFrame:
+    """Resample daily OHLCV to weekly (week ending Friday)."""
+    if df.empty or "datetime" not in df.columns:
+        return df
+    df = df.set_index("datetime")
+    wdf = df.resample("W-FRI").agg(
+        open=("open", "first"),
+        high=("high", "max"),
+        low=("low", "min"),
+        close=("close", "last"),
+        volume=("volume", "sum"),
+    ).dropna()
+    wdf.index.name = "datetime"
+    return wdf.reset_index()
+
+
 async def _process_stock(row: pd.Series, benchmark_df: pd.DataFrame, semaphore: asyncio.Semaphore) -> Optional[dict]:
     async with semaphore:
         symbol = row.get("symbol", "")
@@ -81,16 +97,22 @@ async def _process_stock(row: pd.Series, benchmark_df: pd.DataFrame, semaphore: 
             if df.empty or len(df) < 50:
                 return None
 
-            indicators = compute_all(df, benchmark_df)
+            wdf = _resample_to_weekly(df)
+            if wdf.empty or len(wdf) < 20:
+                return None
+
+            wbench = _resample_to_weekly(benchmark_df) if benchmark_df is not None and not benchmark_df.empty else None
+
+            indicators = compute_all(wdf, wbench)
             if not indicators:
                 return None
 
-            scores = score_all(df, indicators)
+            scores = score_all(wdf, indicators)
             best_name, best_score = best_strategy(scores)
             badges = get_badges(indicators, scores)
 
-            cmp = df["close"].iloc[-1]
-            prev_close = df["close"].iloc[-2] if len(df) > 1 else cmp
+            cmp = wdf["close"].iloc[-1]
+            prev_close = wdf["close"].iloc[-2] if len(wdf) > 1 else cmp
             pct_change = (cmp - prev_close) / prev_close * 100 if prev_close else 0
 
             atr_val = indicators.get("atr", 0)
