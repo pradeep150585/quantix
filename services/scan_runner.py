@@ -94,16 +94,12 @@ def run_combined_scan_cached():
     except ImportError:
         pass
 
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
         result = loop.run_until_complete(_combined_scan())
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        result = loop.run_until_complete(_combined_scan())
+    finally:
+        loop.close()
 
     st.session_state[_KEY] = result
     return result
