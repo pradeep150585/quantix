@@ -25,8 +25,6 @@ except Exception as _boot_err:
 
 if "app_start_time" not in st.session_state:
     st.session_state.app_start_time = time.time()
-    st.cache_data.clear()
-    st.cache_resource.clear()
 
 PAGES = [
     ("Dashboard",        "dashboard"),
@@ -42,169 +40,38 @@ if "page" not in st.session_state:
 if "_last_page" not in st.session_state:
     st.session_state._last_page = None
 
-cache_buster = int(time.time() / 10)
-
-st.markdown(f"""
+st.markdown("""
 <style>
-/* Cache buster: {cache_buster} */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-
-*, *::before, *::after {{ box-sizing: border-box; }}
-html, body, [class*="css"] {{
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: #0b0e17;
-    color: #d1d4dc;
-}}
-.stApp {{ background: #0b0e17; }}
-[data-testid="stSidebar"] {{ display: none !important; }}
-#MainMenu, footer, header {{ visibility: hidden; }}
-[data-testid="stDecoration"], [data-testid="stToolbar"] {{ display: none !important; }}
-.stDeployButton {{ display: none !important; }}
-
-/* Header */
-.quantix-header {{
-    background: #131722;
-    border-bottom: 1px solid #1e2433;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 12px;
-    height: 48px;
-    width: 100%;
-}}
-.quantix-logo {{
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: .04em;
-    color: #ffffff;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}}
-.quantix-logo-dot {{
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: #00c853;
-    display: inline-block;
-}}
-.quantix-status {{
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: .6rem;
-    color: #4a5568;
-}}
-.dot-on {{ display:inline-block;width:5px;height:5px;border-radius:50%;background:#00c853; }}
-.dot-off {{ display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444; }}
-
-/* Nav */
-div[data-testid="stHorizontalBlock"]:first-of-type {{
-    position: relative;
-    z-index: 9999 !important;
-    background: #0b0e17;
-}}
-
-/* Content */
-.block-container {{
-    padding: 0 10px 12px !important;
-    max-width: 100% !important;
-    background: #0b0e17 !important;
-}}
-
-/* Inputs */
-.stTextInput input, .stSelectbox > div > div, .stTextArea textarea {{
-    background: #131722 !important;
-    border: 1px solid #2d3748 !important;
-    border-radius: 3px !important;
-    color: #d1d4dc !important;
-    font-size: .75rem !important;
-    padding: 8px 10px !important;
-    height: 36px !important;
-    min-height: 36px !important;
-}}
-.stTextInput input:focus, .stTextArea textarea:focus {{
-    border-color: #00c853 !important;
-    box-shadow: 0 0 0 1px rgba(0,200,83,.2) !important;
-}}
-
-/* Buttons */
-.stButton > button {{
-    background: #00c853 !important;
-    color: #000000 !important;
-    border: none !important;
-    border-radius: 3px !important;
-    font-size: .7rem !important;
-    font-weight: 600 !important;
-    padding: 7px 14px !important;
-    min-height: 36px !important;
-}}
-.stButton > button:hover {{ background: #00e676 !important; }}
-.stButton > button[kind="secondary"] {{
-    background: #1e2433 !important;
-    color: #d1d4dc !important;
-    border: 1px solid #2d3748 !important;
-}}
-.stButton > button[kind="secondary"]:hover {{
-    background: #252d3d !important;
-    border-color: #00c853 !important;
-}}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] {{
-    background: transparent;
-    border-bottom: 1px solid #1e2433;
-    gap: 0; padding: 0;
-}}
-.stTabs [data-baseweb="tab"] {{
-    background: transparent !important;
-    color: #6b7280 !important;
-    border-radius: 0 !important;
-    font-size: .68rem !important;
-    font-weight: 500 !important;
-    padding: 6px 12px !important;
-    border-bottom: 2px solid transparent !important;
-}}
-.stTabs [aria-selected="true"] {{
-    color: #ffffff !important;
-    border-bottom-color: #00c853 !important;
-}}
-
-/* Metrics */
-[data-testid="stMetric"] {{
-    background: #131722;
-    border: 1px solid #1e2433;
-    border-radius: 4px;
-    padding: 10px 12px !important;
-}}
-[data-testid="stMetricLabel"] {{
-    color: #6b7280 !important;
-    font-size: .58rem !important;
-    font-weight: 500 !important;
-}}
-[data-testid="stMetricValue"] {{
-    color: #ffffff !important;
-    font-size: 1rem !important;
-    font-weight: 700 !important;
-}}
-
-/* Scrollbar */
-::-webkit-scrollbar {{ width: 3px; height: 3px; }}
-::-webkit-scrollbar-track {{ background: #0b0e17; }}
-::-webkit-scrollbar-thumb {{ background: #2d3748; border-radius: 2px; }}
-
-/* Misc */
-hr {{ border-color: #1e2433 !important; margin: 10px 0 !important; }}
-[data-testid="stAlert"] {{ border-radius: 3px !important; font-size: .72rem !important; padding: 8px 10px !important; }}
-
-/* Mobile */
-@media (max-width: 768px) {{
-    .quantix-header {{ padding: 0 8px; height: 44px; }}
-    .quantix-logo {{ font-size: .9rem; }}
-    .quantix-status {{ display: none; }}
-    .block-container {{ padding: 0 6px 8px !important; }}
-    .stTabs [data-baseweb="tab"] {{ padding: 4px 8px !important; font-size: .65rem !important; }}
-}}
+*,*::before,*::after{box-sizing:border-box}
+html,body,[class*="css"]{font-family:'Inter',system-ui,sans-serif;background:#0b0e17;color:#d1d4dc}
+.stApp{background:#0b0e17}
+[data-testid="stSidebar"],#MainMenu,footer,header,[data-testid="stDecoration"],[data-testid="stToolbar"],.stDeployButton{display:none!important}
+.quantix-header{background:#131722;border-bottom:1px solid #1e2433;display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:48px;width:100%}
+.quantix-logo{font-size:1rem;font-weight:700;letter-spacing:.04em;color:#fff;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.quantix-logo-dot{width:5px;height:5px;border-radius:50%;background:#00c853;display:inline-block}
+.quantix-status{display:flex;align-items:center;gap:4px;font-size:.6rem;color:#4a5568}
+.dot-on{display:inline-block;width:5px;height:5px;border-radius:50%;background:#00c853}
+.dot-off{display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444}
+.block-container{padding:0 10px 12px!important;max-width:100%!important;background:#0b0e17!important}
+.stTextInput input,.stSelectbox>div>div,.stTextArea textarea{background:#131722!important;border:1px solid #2d3748!important;border-radius:3px!important;color:#d1d4dc!important;font-size:.75rem!important;padding:8px 10px!important;height:36px!important}
+.stTextInput input:focus,.stTextArea textarea:focus{border-color:#00c853!important;box-shadow:0 0 0 1px rgba(0,200,83,.2)!important}
+.stButton>button{background:#00c853!important;color:#000!important;border:none!important;border-radius:3px!important;font-size:.7rem!important;font-weight:600!important;padding:7px 14px!important;min-height:36px!important}
+.stButton>button:hover{background:#00e676!important}
+.stButton>button[kind="secondary"]{background:#1e2433!important;color:#d1d4dc!important;border:1px solid #2d3748!important}
+.stButton>button[kind="secondary"]:hover{background:#252d3d!important;border-color:#00c853!important}
+.stTabs [data-baseweb="tab-list"]{background:transparent;border-bottom:1px solid #1e2433;gap:0;padding:0}
+.stTabs [data-baseweb="tab"]{background:transparent!important;color:#6b7280!important;border-radius:0!important;font-size:.68rem!important;font-weight:500!important;padding:6px 12px!important;border-bottom:2px solid transparent!important}
+.stTabs [aria-selected="true"]{color:#fff!important;border-bottom-color:#00c853!important}
+[data-testid="stMetric"]{background:#131722;border:1px solid #1e2433;border-radius:4px;padding:10px 12px!important}
+[data-testid="stMetricLabel"]{color:#6b7280!important;font-size:.58rem!important;font-weight:500!important}
+[data-testid="stMetricValue"]{color:#fff!important;font-size:1rem!important;font-weight:700!important}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:#0b0e17}
+::-webkit-scrollbar-thumb{background:#2d3748;border-radius:2px}
+hr{border-color:#1e2433!important;margin:10px 0!important}
+[data-testid="stAlert"]{border-radius:3px!important;font-size:.72rem!important;padding:8px 10px!important}
+@media(max-width:768px){.quantix-header{padding:0 8px;height:44px}.quantix-logo{font-size:.9rem}.quantix-status{display:none}.block-container{padding:0 6px 8px!important}.stTabs [data-baseweb="tab"]{padding:4px 8px!important;font-size:.65rem!important}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -249,9 +116,6 @@ page_slot = st.empty()
 # Track page changes
 if st.session_state._last_page != page_module:
     st.session_state._last_page = page_module
-    # Force Streamlit to clear all cached components
-    st.cache_data.clear()
-    st.cache_resource.clear()
 
 if page_module == "dashboard":
     from pages.dashboard import render

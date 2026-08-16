@@ -8,6 +8,7 @@ import time
 import re
 from dataclasses import dataclass, field
 from typing import Optional
+from datetime import datetime, timedelta
 import httpx
 import feedparser
 from loguru import logger
@@ -56,6 +57,20 @@ _EXCLUDE_KEYWORDS = {
     "ipo listing", "crypto", "bitcoin", "ethereum", "nft", "mutual fund",
     "etf", "commodity", "crude", "natural gas", "silver", "copper",
 }
+
+
+def _is_recent_news(published_str: str) -> bool:
+    """Check if news is from today or yesterday."""
+    if not published_str:
+        return True
+    try:
+        from email.utils import parsedate_to_datetime
+        pub_date = parsedate_to_datetime(published_str).date()
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+        return pub_date in (today, yesterday)
+    except Exception:
+        return True
 
 
 def _is_stock_or_gold_news(text: str) -> bool:
@@ -153,11 +168,16 @@ async def _fetch_feed(name: str, url: str, client: httpx.AsyncClient) -> list[Ne
         resp = await client.get(url, timeout=10)
         feed = feedparser.parse(resp.text)
         items = []
-        for entry in feed.entries[:20]:
+        for entry in feed.entries[:30]:
             title = entry.get("title", "")
             summary = entry.get("summary", entry.get("description", ""))
             published = entry.get("published", "")
             link = entry.get("link", "")
+            
+            # Filter to today/yesterday only
+            if not _is_recent_news(published):
+                continue
+            
             text = f"{title} {summary}"
             uid = hashlib.md5(link.encode()).hexdigest()[:12]
             sentiment, score, confidence = _sentiment(text)

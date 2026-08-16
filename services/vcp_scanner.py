@@ -25,7 +25,7 @@ from services.instruments import get_nifty200_symbols
 from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp
 
 _HIST_DAYS        = 300
-_CHART_BARS       = 120   # bars to keep for charting
+_CHART_BARS       = 80   # bars to keep for charting
 _LOOKBACK         = 20    # swing detection window (reduced for weekly)
 _MIN_CONTRACTIONS = 2
 _MAX_CONTRACTIONS = 4

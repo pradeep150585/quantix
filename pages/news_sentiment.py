@@ -19,7 +19,7 @@ def _run(coro):
         loop.close()
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _fetch_news():
     from dataclasses import asdict
     symbols_df = _run(get_nifty200_symbols())

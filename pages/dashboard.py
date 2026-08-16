@@ -22,7 +22,7 @@ def _run(coro):
         loop.close()
 
 
-@st.cache_data(ttl=86400, show_spinner=False)
+@st.cache_data(ttl=600, show_spinner=False)
 def _fetch_indicators(key: str):
     df = _run(get_historical_df(key, interval="day", days=100))
     if df.empty:

@@ -2,13 +2,10 @@
 Page 4 – Legendary Traders Strategy Scanner (Lightweight)
 """
 import asyncio
-import io
 import time
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from scanner import get_cached_scan
 from strategies import score_color
 from services.market_data import get_quotes, parse_quote, get_historical_df
@@ -83,12 +80,14 @@ def _run_scan_with_progress(ph) -> pd.DataFrame:
         raise scan_error[0]
     return scan_result[0] if scan_result[0] is not None else pd.DataFrame()
 
-@st.cache_data(ttl=15, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _refresh_prices(keys_tuple: tuple) -> dict:
     return _run(get_quotes(list(keys_tuple)))
 
-def _build_strategy_chart(symbol: str, row: pd.Series) -> go.Figure:
+def _build_strategy_chart(symbol: str, row: pd.Series):
     """Build weekly chart with technical indicators as subplots."""
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
     try:
         ikey = row.get("instrument_key", "")
         df = _run(get_historical_df(ikey, interval="day", days=260))
