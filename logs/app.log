@@ -2234,3 +2234,20 @@
 2026-08-16 22:56:01.005 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
 2026-08-16 22:56:01.005 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
 2026-08-16 22:57:02.769 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=11, Elder=118
+2026-08-16 23:17:40.605 | WARNING  | services.scan_runner:run_combined_scan_cached:104 - nest_asyncio not available - async operations may fail
+2026-08-16 23:17:40.605 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
+2026-08-16 23:18:24.885 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=11, Elder=118
+2026-08-16 23:24:47.212 | INFO     | services.scan_runner:run_combined_scan_cached:105 - Running fresh scan...
+2026-08-16 23:24:47.212 | WARNING  | services.scan_runner:run_combined_scan_cached:112 - nest_asyncio not available - async operations may fail
+2026-08-16 23:24:48.151 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9667 NSE EQ instruments from Upstox master
+2026-08-16 23:24:50.834 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-16 23:24:50.834 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
+2026-08-16 23:25:58.243 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=11, Elder=118
+2026-08-16 23:25:58.259 | INFO     | services.scan_runner:run_combined_scan_cached:126 - Scan completed - returning result with VCP rows: 11
+2026-08-16 23:25:58.259 | INFO     | pages.ai_picks:render:287 - Scan returned: vcp_df=<class 'pandas.core.frame.DataFrame'> len=11, elder_df=<class 'pandas.core.frame.DataFrame'> len=118
+2026-08-16 23:25:58.259 | INFO     | pages.ai_picks:_render_vcp:180 - _render_vcp called with df shape: (11, 23)
+2026-08-16 23:25:58.259 | INFO     | pages.ai_picks:_render_vcp:187 - VCP DataFrame columns: ['symbol', 'company_name', 'sector', 'instrument_key', 'cmp', 'pct_change', 'vcp_score', 'contractions', 'contraction_pcts', 'pivot', 'entry_price', 'stop_loss', 'is_breakout', 'volume_ratio', 'vol_dryup', 'squeeze', 'wma10', 'wma30', 'atr', 'high_52w', 'low_52w', 'dist_52h_pct', 'badges']
+2026-08-16 23:25:58.259 | INFO     | pages.ai_picks:_render_vcp:188 - is_breakout column exists: True
+2026-08-16 23:25:58.342 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {False: 9, True: 2}
+2026-08-16 23:25:58.342 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: ['SOLARINDS', 'SIEMENS']
+2026-08-16 23:25:58.346 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: [45.0, 40.0]

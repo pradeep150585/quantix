@@ -177,12 +177,22 @@ def _render_vcp_card(rank: int, row: pd.Series, chart_store: dict, key_prefix: s
 # -- VCP tab content -----------------------------------------------------------
 
 def _render_vcp(df: pd.DataFrame, chart_store: dict):
-    logger.info(f"_render_vcp called with df: {type(df)}, len: {len(df) if df is not None and not df.empty else 0}")
+    logger.info(f"_render_vcp called with df shape: {df.shape if df is not None else 'None'}")
     
     if df is None or df.empty:
         st.info("No stocks currently meet the VCP criteria.")
         return
 
+    # Debug: Check the data
+    logger.info(f"VCP DataFrame columns: {df.columns.tolist()}")
+    logger.info(f"is_breakout column exists: {'is_breakout' in df.columns}")
+    if 'is_breakout' in df.columns:
+        logger.info(f"is_breakout values: {df['is_breakout'].value_counts().to_dict()}")
+        logger.info(f"Symbols with is_breakout=True: {df[df['is_breakout']==True]['symbol'].tolist()}")
+        logger.info(f"VCP scores of breakouts: {df[df['is_breakout']==True]['vcp_score'].tolist()}")
+    else:
+        logger.error("is_breakout column is MISSING from DataFrame!")
+    
     # Filter: high score OR active breakout (don't filter out breakouts)
     score_threshold = 30
     total_before = len(df)
@@ -263,13 +273,11 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
 def render(slot):
     slot.empty()
     with slot.container():
-        # Add cache clear button
-        col1, col2 = st.columns([6, 1])
-        with col2:
-            if st.button("🔄 Refresh", key="refresh_scan"):
-                if "_combined_scan_result" in st.session_state:
-                    del st.session_state["_combined_scan_result"]
-                st.rerun()
+        # Always clear cache to ensure fresh data (remove this in production if scans are slow)
+        _KEY = "_combined_scan_result"
+        if _KEY in st.session_state:
+            logger.info("Clearing scan cache for fresh data")
+            del st.session_state[_KEY]
         
         ph = st.empty()
         ph.markdown(loading_html("Running AI scans..."), unsafe_allow_html=True)

@@ -98,8 +98,12 @@ def run_combined_scan_cached():
     """
     _KEY = "_combined_scan_result"
     if _KEY in st.session_state:
-        return st.session_state[_KEY]
+        cached_result = st.session_state[_KEY]
+        logger.info(f"Returning cached scan: VCP={len(cached_result[0]) if cached_result[0] is not None and not cached_result[0].empty else 0}")
+        return cached_result
 
+    logger.info("Running fresh scan...")
+    
     # Apply nest_asyncio to allow nested event loops in Streamlit
     try:
         import nest_asyncio
@@ -120,6 +124,10 @@ def run_combined_scan_cached():
     try:
         result = loop.run_until_complete(_combined_scan())
         logger.info(f"Scan completed - returning result with VCP rows: {len(result[0]) if result and len(result) > 0 and not result[0].empty else 0}")
+        
+        # Store timestamp
+        import time
+        st.session_state["_scan_timestamp"] = time.time()
     except Exception as e:
         logger.error(f"Scan failed: {e}", exc_info=True)
         result = (pd.DataFrame(), {}, pd.DataFrame(), {})
