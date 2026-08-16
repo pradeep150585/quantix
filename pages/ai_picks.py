@@ -191,6 +191,13 @@ def _render_vcp():
         st.info("No stocks currently meet the VCP criteria.")
         return
 
+    # Filter: only stocks with score above 50
+    df = df[df["vcp_score"] > 50]
+    
+    if df.empty:
+        st.info("No stocks with VCP score above 50.")
+        return
+
     breakouts  = df[df["is_breakout"] == True]
     near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -8)]
     avg_score  = df["vcp_score"].mean()

@@ -232,7 +232,7 @@ def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
 
 # -- Stock row -----------------------------------------------------------------
 
-def _render_row(row: pd.Series, chart_store: dict):
+def _render_row(row: pd.Series, chart_store: dict, key_prefix: str = ""):
     symbol  = row.get("symbol", "")
     score   = row.get("score", 0)
     grade   = row.get("grade", "")
@@ -297,7 +297,7 @@ def _render_row(row: pd.Series, chart_store: dict):
                 fig = _build_elder_chart(symbol, row, cdf)
                 st.plotly_chart(fig, use_container_width=True,
                                 config={"displayModeBar": False},
-                                key=f"elder_chart_{symbol}")
+                                key=f"elder_chart_{key_prefix}{symbol}")
             else:
                 st.info("Chart data unavailable.")
 
@@ -309,38 +309,41 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
         st.info("No stocks currently pass the Triple Screen criteria. The system says NO TRADE.")
         return
 
+    # Filter: only A+, A, B grades (remove WATCHLIST)
+    df = df[df["grade"].isin(["A+", "A", "B"])]
+    
+    if df.empty:
+        st.info("No stocks with A+, A, or B grades.")
+        return
+
     a_plus  = df[df["grade"] == "A+"]
     a_grade = df[df["grade"] == "A"]
     b_grade = df[df["grade"] == "B"]
-    watch   = df[df["grade"] == "WATCHLIST"]
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Setups", len(df))
     c2.metric("A+ Setups",    len(a_plus))
     c3.metric("A Setups",     len(a_grade))
     c4.metric("B Setups",     len(b_grade))
-    c5.metric("Watchlist",    len(watch))
 
-    t_ap, t_a, t_b, t_w, t_all = st.tabs([
+    t_ap, t_a, t_b, t_all = st.tabs([
         f"A+ ({len(a_plus)})",
         f"A ({len(a_grade)})",
         f"B ({len(b_grade)})",
-        f"Watchlist ({len(watch)})",
         f"All ({len(df)})",
     ])
 
-    def _tab(subset: pd.DataFrame):
+    def _tab(subset: pd.DataFrame, prefix: str):
         if subset.empty:
             st.info("No setups in this category.")
             return
-        for rank, (_, row) in enumerate(subset.head(20).iterrows(), 1):
-            _render_row(row, chart_store)
+        for _, row in subset.head(20).iterrows():
+            _render_row(row, chart_store, key_prefix=prefix)
 
-    with t_ap:  _tab(a_plus)
-    with t_a:   _tab(a_grade)
-    with t_b:   _tab(b_grade)
-    with t_w:   _tab(watch)
-    with t_all: _tab(df)
+    with t_ap:  _tab(a_plus,   "ap_")
+    with t_a:   _tab(a_grade,  "a_")
+    with t_b:   _tab(b_grade,  "b_")
+    with t_all: _tab(df,       "all_")
 
 
 # -- Entry points --------------------------------------------------------------

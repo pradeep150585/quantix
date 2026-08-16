@@ -287,29 +287,32 @@ def render(slot):
             st.session_state[_SCAN_KEY] = df
         st.session_state[_LAST_REFRESH_KEY] = now
 
+    # Filter: only stocks with script above 80
+    df_filtered = df[df['best_score'] > 80]
+    
     # Summary metrics
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Setups", len(df))
-    c2.metric("Avg Score", f"{df['best_score'].mean():.1f}")
-    c3.metric("High Volume", len(df[df['volume_ratio'] >= 1.5]))
-    c4.metric("Near 52W High", len(df[df['dist_52h_pct'] >= -5]))
+    c1.metric("Total Setups", len(df_filtered))
+    c2.metric("Avg Score", f"{df_filtered['best_score'].mean():.1f}")
+    c3.metric("High Volume", len(df_filtered[df_filtered['volume_ratio'] >= 1.5]))
+    c4.metric("Near 52W High", len(df_filtered[df_filtered['dist_52h_pct'] >= -5]))
 
     st.markdown("---")
     st.markdown('<div style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Strategy Setups - Click to Expand for Chart</div>', unsafe_allow_html=True)
 
     # Render expandable rows for each stock
-    for rank, (_, row) in enumerate(df.head(30).iterrows(), 1):
+    for rank, (_, row) in enumerate(df_filtered.head(30).iterrows(), 1):
         _render_strategy_row(rank, row)
 
     st.markdown("---")
     col_x, col_y = st.columns(2)
     with col_x:
         st.download_button("Export CSV",
-                           df.drop(columns=["instrument_key", "badges"], errors="ignore")
+                           df_filtered.drop(columns=["instrument_key", "badges"], errors="ignore")
                              .to_csv(index=False).encode(),
                            "strategy_scan.csv", "text/csv")
     with col_y:
         buf = io.BytesIO()
-        df.drop(columns=["instrument_key", "badges"], errors="ignore").to_excel(buf, index=False, engine="openpyxl")
+        df_filtered.drop(columns=["instrument_key", "badges"], errors="ignore").to_excel(buf, index=False, engine="openpyxl")
         st.download_button("Export Excel", buf.getvalue(), "strategy_scan.xlsx",
                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
