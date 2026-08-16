@@ -18,6 +18,18 @@ def load_config() -> dict:
     global _config
     if _config is not None:
         return _config
+    
+    # Try to load from Streamlit secrets first (for Streamlit Cloud)
+    try:
+        import streamlit as st
+        if hasattr(st, 'secrets') and st.secrets:
+            logger.info("Loading config from Streamlit secrets")
+            _config = st.secrets.to_dict()
+            return _config
+    except Exception as e:
+        logger.debug(f"Streamlit secrets not available: {e}")
+    
+    # Load from local config.yaml
     config_path = Path(__file__).parent / "config.yaml"
     if config_path.exists():
         with open(config_path, "r") as f:
