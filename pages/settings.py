@@ -84,6 +84,12 @@ def render(slot):
                 if not can_save_to_file:
                     st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
                 else:
+                    # Ensure nested dicts exist
+                    if "upstox" not in cfg:
+                        cfg["upstox"] = {}
+                    if "ai" not in cfg:
+                        cfg["ai"] = {}
+                    
                     cfg["upstox"]["api_key"]      = api_key
                     cfg["upstox"]["api_secret"]   = api_secret
                     cfg["upstox"]["access_token"] = access_token
@@ -108,6 +114,10 @@ def render(slot):
                 if not can_save_to_file:
                     st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
                 else:
+                    # Ensure nested dict exists
+                    if "alerts" not in cfg:
+                        cfg["alerts"] = {}
+                    
                     cfg["alerts"]["telegram_enabled"]   = tg_enabled
                     cfg["alerts"]["telegram_bot_token"] = tg_token
                     cfg["alerts"]["telegram_chat_id"]   = tg_chat
@@ -128,6 +138,10 @@ def render(slot):
                 if not can_save_to_file:
                     st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
                 else:
+                    # Ensure nested dict exists
+                    if "scanner" not in cfg:
+                        cfg["scanner"] = {}
+                    
                     cfg["scanner"].update({
                         "vcp_lookback": vcp_lb, "rs_lookback": rs_lb,
                         "volume_avg_period": vol_period,
@@ -147,6 +161,10 @@ def render(slot):
                 if not can_save_to_file:
                     st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
                 else:
+                    # Ensure nested dict exists
+                    if "app" not in cfg:
+                        cfg["app"] = {}
+                    
                     cfg["app"]["refresh_interval"] = refresh
                     cfg["app"]["scanner_refresh"]  = scanner_refresh
                     cfg["app"]["news_refresh"]     = news_refresh
