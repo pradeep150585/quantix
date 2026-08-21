@@ -64,6 +64,10 @@ def render(slot):
         # Check if we can write to config file (not available in Streamlit Cloud)
         can_save_to_file = config_path.exists() and config_path.parent.exists()
         
+        # Make a mutable copy of config (in case it's from st.secrets)
+        import copy
+        cfg = copy.deepcopy(dict(cfg)) if cfg else {}
+        
         if not can_save_to_file:
             st.warning("⚠️ Config file not writable. Settings can only be changed via Streamlit secrets or environment variables in cloud deployments.")
 
