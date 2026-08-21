@@ -8,7 +8,9 @@ from config import load_config
 from api.upstox_client import get_client
 from components.ui import page_heading
 
-_PASSWORD = "Pragu1020$"
+# Get password from config or use default
+from config import get
+_PASSWORD = get("app.settings_password", "Pragu1020$")
 
 _SETTINGS_CSS = """
 <style>
@@ -51,6 +53,10 @@ def render(slot):
                 st.rerun()
             else:
                 st.error("Incorrect password.")
+                # Debug info (remove in production)
+                import streamlit as st
+                if st.secrets.get("debug_mode", False):
+                    st.caption(f"Expected: {_PASSWORD}, Got: {pwd}")
         return
 
     cfg = load_config()
