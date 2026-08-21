@@ -2355,3 +2355,36 @@
 2026-08-21 21:33:49.397 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {False: 6}
 2026-08-21 21:33:49.397 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: []
 2026-08-21 21:33:49.397 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: []
+2026-08-21 21:52:07.442 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9670 NSE EQ instruments from Upstox master
+2026-08-21 21:52:09.441 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-21 21:52:09.450 | INFO     | scanner:run_scan:170 - Starting full Nifty 200 strategy scan...
+2026-08-21 21:52:37.891 | INFO     | scanner:run_scan:181 - Bulk prefetch: 199 candles cached
+2026-08-21 21:52:58.492 | INFO     | scanner:run_scan:199 - Scan complete: 199 stocks processed and cached
+2026-08-21 21:53:12.652 | INFO     | pages.ai_picks:render:278 - AI Picks page render - Code version: v2.1-breakout-fix
+2026-08-21 21:53:12.668 | INFO     | services.scan_runner:run_combined_scan_cached:105 - Running fresh scan...
+2026-08-21 21:53:12.673 | WARNING  | services.scan_runner:run_combined_scan_cached:112 - nest_asyncio not available - async operations may fail
+2026-08-21 21:53:12.673 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
+2026-08-21 21:54:25.643 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=4, Elder=87
+2026-08-21 21:54:25.650 | INFO     | services.scan_runner:run_combined_scan_cached:126 - Scan completed - returning result with VCP rows: 4
+2026-08-21 21:54:25.651 | INFO     | pages.ai_picks:render:291 - Scan returned: vcp_df=<class 'pandas.core.frame.DataFrame'> len=4, elder_df=<class 'pandas.core.frame.DataFrame'> len=87
+2026-08-21 21:54:25.655 | INFO     | pages.ai_picks:_render_vcp:180 - _render_vcp called with df shape: (4, 23)
+2026-08-21 21:54:25.657 | INFO     | pages.ai_picks:_render_vcp:187 - VCP DataFrame columns: ['symbol', 'company_name', 'sector', 'instrument_key', 'cmp', 'pct_change', 'vcp_score', 'contractions', 'contraction_pcts', 'pivot', 'entry_price', 'stop_loss', 'is_breakout', 'volume_ratio', 'vol_dryup', 'squeeze', 'wma10', 'wma30', 'atr', 'high_52w', 'low_52w', 'dist_52h_pct', 'badges']
+2026-08-21 21:54:25.660 | INFO     | pages.ai_picks:_render_vcp:188 - is_breakout column exists: True
+2026-08-21 21:54:25.660 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {True: 2, False: 2}
+2026-08-21 21:54:25.663 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: ['PERSISTENT', 'ETERNAL']
+2026-08-21 21:54:25.673 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: [54.0, 51.8]
+2026-08-21 22:04:26.934 | INFO     | config:load_config:26 - Loading config from Streamlit secrets
+2026-08-21 22:05:22.775 | INFO     | pages.ai_picks:render:278 - AI Picks page render - Code version: v2.1-breakout-fix
+2026-08-21 22:05:22.776 | INFO     | pages.ai_picks:render:283 - Clearing scan cache for fresh data
+2026-08-21 22:05:22.785 | INFO     | services.scan_runner:run_combined_scan_cached:105 - Running fresh scan...
+2026-08-21 22:05:22.785 | WARNING  | services.scan_runner:run_combined_scan_cached:112 - nest_asyncio not available - async operations may fail
+2026-08-21 22:05:22.795 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
+2026-08-21 22:05:57.945 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=4, Elder=87
+2026-08-21 22:05:57.945 | INFO     | services.scan_runner:run_combined_scan_cached:126 - Scan completed - returning result with VCP rows: 4
+2026-08-21 22:05:57.945 | INFO     | pages.ai_picks:render:291 - Scan returned: vcp_df=<class 'pandas.core.frame.DataFrame'> len=4, elder_df=<class 'pandas.core.frame.DataFrame'> len=87
+2026-08-21 22:05:57.954 | INFO     | pages.ai_picks:_render_vcp:180 - _render_vcp called with df shape: (4, 23)
+2026-08-21 22:05:57.962 | INFO     | pages.ai_picks:_render_vcp:187 - VCP DataFrame columns: ['symbol', 'company_name', 'sector', 'instrument_key', 'cmp', 'pct_change', 'vcp_score', 'contractions', 'contraction_pcts', 'pivot', 'entry_price', 'stop_loss', 'is_breakout', 'volume_ratio', 'vol_dryup', 'squeeze', 'wma10', 'wma30', 'atr', 'high_52w', 'low_52w', 'dist_52h_pct', 'badges']
+2026-08-21 22:05:57.965 | INFO     | pages.ai_picks:_render_vcp:188 - is_breakout column exists: True
+2026-08-21 22:05:57.970 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {True: 2, False: 2}
+2026-08-21 22:05:57.975 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: ['PERSISTENT', 'ETERNAL']
+2026-08-21 22:05:57.975 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: [54.0, 51.8]

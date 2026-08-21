@@ -206,11 +206,24 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
     near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -20)]
     avg_score  = df["vcp_score"].mean()
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("VCP Setups",       len(df))
     c2.metric("Active Breakouts", len(breakouts))
     c3.metric("Near Pivot",       len(near_pivot))
     c4.metric("Avg VCP Score",    f"{avg_score:.1f}")
+    
+    # Add force rescan button
+    with c5:
+        if st.button("🔄 Force Rescan", help="Clear cache and run fresh VCP scan", use_container_width=True, key="vcp_rescan"):
+            # Clear session state
+            if "_vcp_scan_df" in st.session_state:
+                del st.session_state["_vcp_scan_df"]
+            if "_vcp_chart_store" in st.session_state:
+                del st.session_state["_vcp_chart_store"]
+            if "_vcp_last_refresh" in st.session_state:
+                del st.session_state["_vcp_last_refresh"]
+            st.cache_data.clear()
+            st.rerun()
     
     # Info message about filtering
     filtered_count = total_before - len(df)
