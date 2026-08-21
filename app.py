@@ -30,8 +30,7 @@ PAGES = [
     ("Dashboard",        "dashboard"),
     ("Live Scanner",     "live_scanner"),
     ("News & Sentiment", "news_sentiment"),
-    ("Strategies",       "strategies_page"),
-    ("AI Picks",         "ai_picks"),
+    ("AI Scanner",       "ai_scanner"),
     ("Settings",         "settings"),
 ]
 
@@ -123,10 +122,8 @@ elif page_module == "live_scanner":
     from pages.live_scanner import render
 elif page_module == "news_sentiment":
     from pages.news_sentiment import render
-elif page_module == "strategies_page":
-    from pages.strategies_page import render
-elif page_module == "ai_picks":
-    from pages.ai_picks import render
+elif page_module == "ai_scanner":
+    from pages.ai_scanner import render
 elif page_module == "settings":
     from pages.settings import render
 else:
