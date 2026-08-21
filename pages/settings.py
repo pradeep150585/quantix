@@ -67,7 +67,7 @@ def render(slot):
         if not can_save_to_file:
             st.warning("⚠️ Config file not writable. Settings can only be changed via Streamlit secrets or environment variables in cloud deployments.")
 
-            tabs = st.tabs(["API Keys", "Alerts", "Scanner", "Display", "Export"])
+        tabs = st.tabs(["API Keys", "Alerts", "Scanner", "Display", "Export"])
 
         with tabs[0]:
             st.markdown('<div style="font-size:.78rem;font-weight:600;color:#d1d4dc;margin-bottom:12px;">Upstox API Credentials</div>', unsafe_allow_html=True)
@@ -97,7 +97,7 @@ def render(slot):
                     st.cache_data.clear()
                     st.success("API credentials saved!")
 
-            with tabs[1]:
+        with tabs[1]:
             st.markdown('<div style="font-size:.78rem;font-weight:600;color:#d1d4dc;margin-bottom:12px;">Telegram Alerts</div>', unsafe_allow_html=True)
             tg_enabled = st.checkbox("Enable Telegram", value=cfg.get("alerts", {}).get("telegram_enabled", False))
             tg_token   = st.text_input("Bot Token", value=cfg.get("alerts", {}).get("telegram_bot_token", ""), type="password", key="tg_token_input")
