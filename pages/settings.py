@@ -36,10 +36,10 @@ def _save(cfg, config_path):
 
 def render(slot):
     slot.empty()
-    st.empty()  # Clear lingering components
-    st.markdown(_SETTINGS_CSS, unsafe_allow_html=True)
+    with slot.container():
+        st.markdown(_SETTINGS_CSS, unsafe_allow_html=True)
 
-    if not st.session_state.get("_settings_auth"):
+        if not st.session_state.get("_settings_auth"):
         st.markdown('<div style="height:80px"></div>', unsafe_allow_html=True)
         pwd = st.text_input("Password", type="password",
                             label_visibility="collapsed",
@@ -61,6 +61,12 @@ def render(slot):
 
     cfg = load_config()
     config_path = Path(__file__).parent.parent / "config" / "config.yaml"
+    
+    # Check if we can write to config file (not available in Streamlit Cloud)
+    can_save_to_file = config_path.exists() and config_path.parent.exists()
+    
+    if not can_save_to_file:
+        st.warning("⚠️ Config file not writable. Settings can only be changed via Streamlit secrets or environment variables in cloud deployments.")
 
     tabs = st.tabs(["API Keys", "Alerts", "Scanner", "Display", "Export"])
 
@@ -76,6 +82,9 @@ def render(slot):
         ai_enabled = st.checkbox("Enable AI Analysis", value=cfg.get("ai", {}).get("enabled", False))
 
         if st.button("Save API Credentials"):
+            if not can_save_to_file:
+                st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
+                return
             cfg["upstox"]["api_key"]      = api_key
             cfg["upstox"]["api_secret"]   = api_secret
             cfg["upstox"]["access_token"] = access_token
@@ -97,6 +106,9 @@ def render(slot):
         min_score  = st.slider("Min Score for Alert", 0, 100, cfg.get("alerts", {}).get("min_score_alert", 75))
 
         if st.button("Save Alert Settings"):
+            if not can_save_to_file:
+                st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
+                return
             cfg["alerts"]["telegram_enabled"]   = tg_enabled
             cfg["alerts"]["telegram_bot_token"] = tg_token
             cfg["alerts"]["telegram_chat_id"]   = tg_chat
@@ -114,6 +126,9 @@ def render(slot):
         rsi_period = st.slider("RSI Period",                 5,   30,  sc.get("rsi_period", 14))
 
         if st.button("Save Scanner Settings"):
+            if not can_save_to_file:
+                st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
+                return
             cfg["scanner"].update({
                 "vcp_lookback": vcp_lb, "rs_lookback": rs_lb,
                 "volume_avg_period": vol_period,
@@ -130,6 +145,9 @@ def render(slot):
         news_refresh    = st.slider("News Refresh (seconds)",      30, 300, cfg.get("app", {}).get("news_refresh", 60))
 
         if st.button("Save Display Settings"):
+            if not can_save_to_file:
+                st.error("Cannot save to config file in this environment. Please update secrets in Streamlit Cloud dashboard.")
+                return
             cfg["app"]["refresh_interval"] = refresh
             cfg["app"]["scanner_refresh"]  = scanner_refresh
             cfg["app"]["news_refresh"]     = news_refresh
