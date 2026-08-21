@@ -2487,3 +2487,16 @@
 2026-08-21 22:24:45.863 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {True: 2, False: 2}
 2026-08-21 22:24:45.863 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: ['PERSISTENT', 'ETERNAL']
 2026-08-21 22:24:45.871 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: [54.0, 51.8]
+2026-08-21 22:24:46.013 | INFO     | pages.ai_picks:render:293 - AI Picks page render - Code version: v2.1-breakout-fix
+2026-08-21 22:24:46.021 | INFO     | services.scan_runner:run_combined_scan_cached:105 - Running fresh scan...
+2026-08-21 22:24:46.021 | WARNING  | services.scan_runner:run_combined_scan_cached:112 - nest_asyncio not available - async operations may fail
+2026-08-21 22:24:46.021 | INFO     | services.scan_runner:_combined_scan:39 - Scanning 200 stocks from Nifty200
+2026-08-21 22:25:24.502 | INFO     | services.scan_runner:_combined_scan:82 - Scan complete: VCP=4, Elder=87
+2026-08-21 22:25:24.502 | INFO     | services.scan_runner:run_combined_scan_cached:126 - Scan completed - returning result with VCP rows: 4
+2026-08-21 22:25:24.502 | INFO     | pages.ai_picks:render:302 - Scan returned: vcp_df=<class 'pandas.core.frame.DataFrame'> len=4, elder_df=<class 'pandas.core.frame.DataFrame'> len=87
+2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:180 - _render_vcp called with df shape: (4, 23)
+2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:187 - VCP DataFrame columns: ['symbol', 'company_name', 'sector', 'instrument_key', 'cmp', 'pct_change', 'vcp_score', 'contractions', 'contraction_pcts', 'pivot', 'entry_price', 'stop_loss', 'is_breakout', 'volume_ratio', 'vol_dryup', 'squeeze', 'wma10', 'wma30', 'atr', 'high_52w', 'low_52w', 'dist_52h_pct', 'badges']
+2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:188 - is_breakout column exists: True
+2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {True: 2, False: 2}
+2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: ['PERSISTENT', 'ETERNAL']
+2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: [54.0, 51.8]

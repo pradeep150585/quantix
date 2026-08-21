@@ -301,21 +301,36 @@ def render(slot):
         
         ph.empty()
 
-        # Refresh live prices periodically (similar to strategies page)
+        # Store scan results in session state for price refresh
+        _VCP_DF_KEY = "_vcp_display_df"
+        _ELDER_DF_KEY = "_elder_display_df"
+        _LAST_REFRESH_KEY = "_ai_picks_last_refresh"
+        _REFRESH_INTERVAL = 15
+        
+        # Initialize or refresh prices
         import time
         from services.market_data import get_quotes, parse_quote
-        
-        _REFRESH_INTERVAL = 15  # seconds
-        _LAST_REFRESH_KEY = "_ai_picks_last_refresh"
         
         now = time.time()
         last = st.session_state.get(_LAST_REFRESH_KEY, 0)
         
-        if now - last >= _REFRESH_INTERVAL and not vcp_df.empty:
+        # Get stored dataframes or use fresh scan
+        if _VCP_DF_KEY in st.session_state:
+            vcp_df = st.session_state[_VCP_DF_KEY]
+        else:
+            st.session_state[_VCP_DF_KEY] = vcp_df
+            
+        if _ELDER_DF_KEY in st.session_state:
+            elder_df = st.session_state[_ELDER_DF_KEY]
+        else:
+            st.session_state[_ELDER_DF_KEY] = elder_df
+        
+        # Refresh prices if interval elapsed
+        if now - last >= _REFRESH_INTERVAL:
             try:
                 # Refresh VCP prices
-                keys = vcp_df["instrument_key"].tolist()
-                if keys:
+                if not vcp_df.empty:
+                    keys = vcp_df["instrument_key"].tolist()
                     import asyncio
                     try:
                         loop = asyncio.new_event_loop()
@@ -334,6 +349,31 @@ def render(slot):
                                 prev = q.get("prev_close", 0)
                                 vcp_df.at[i, "cmp"] = round(ltp, 2)
                                 vcp_df.at[i, "pct_change"] = round((ltp - prev) / prev * 100, 2) if prev else 0
+                        st.session_state[_VCP_DF_KEY] = vcp_df
+                
+                # Refresh Elder prices
+                if not elder_df.empty:
+                    keys = elder_df["instrument_key"].tolist()
+                    import asyncio
+                    try:
+                        loop = asyncio.new_event_loop()
+                        raw = loop.run_until_complete(get_quotes(keys))
+                        loop.close()
+                    except:
+                        loop = asyncio.get_event_loop()
+                        raw = loop.run_until_complete(get_quotes(keys))
+                    
+                    if raw:
+                        elder_df = elder_df.copy()
+                        for i, row in elder_df.iterrows():
+                            q = parse_quote(raw.get(row["instrument_key"], {}))
+                            if q and q.get("ltp", 0) > 0:
+                                ltp = q["ltp"]
+                                prev = q.get("prev_close", 0)
+                                elder_df.at[i, "cmp"] = round(ltp, 2)
+                                elder_df.at[i, "pct_change"] = round((ltp - prev) / prev * 100, 2) if prev else 0
+                        st.session_state[_ELDER_DF_KEY] = elder_df
+                        
             except Exception as e:
                 logger.debug(f"Price refresh failed: {e}")
             

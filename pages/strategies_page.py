@@ -80,7 +80,7 @@ def _run_scan_with_progress(ph) -> pd.DataFrame:
         raise scan_error[0]
     return scan_result[0] if scan_result[0] is not None else pd.DataFrame()
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=10, show_spinner=False)  # Reduced from 300 to 10 seconds for fresh prices
 def _refresh_prices(keys_tuple: tuple) -> dict:
     return _run(get_quotes(list(keys_tuple)))
 
