@@ -290,10 +290,12 @@ async def run_vcp_scan() -> tuple[pd.DataFrame, dict]:
         return pd.DataFrame(), {}
 
     all_keys = symbols_df["instrument_key"].tolist()
-    await bulk_prefetch_today_ohlc(all_keys)
+    
+    # Fetch today's OHLC to ensure latest data
+    prefetched = await bulk_prefetch_today_ohlc(all_keys)
+    logger.info(f"VCP scan: prefetched {prefetched} today's candles")
 
-    # Don't fetch live LTP - use historical close price for consistency
-    # This ensures VCP results are deterministic and match between local/cloud
+    # Use empty ltp_raw - prices will be from historical close (consistent)
     ltp_raw = {}
 
     # Reduced semaphore for better stability in Streamlit
