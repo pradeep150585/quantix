@@ -215,13 +215,15 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
     # Add force rescan button
     with c5:
         if st.button("🔄 Force Rescan", help="Clear cache and run fresh VCP scan", use_container_width=True, key="vcp_rescan"):
-            # Clear session state
+            # Clear all VCP-related session state
             if "_vcp_scan_df" in st.session_state:
                 del st.session_state["_vcp_scan_df"]
             if "_vcp_chart_store" in st.session_state:
                 del st.session_state["_vcp_chart_store"]
             if "_vcp_last_refresh" in st.session_state:
                 del st.session_state["_vcp_last_refresh"]
+            if "_combined_scan_result" in st.session_state:
+                del st.session_state["_combined_scan_result"]
             st.cache_data.clear()
             st.rerun()
     
@@ -290,14 +292,10 @@ def render(slot):
         CODE_VERSION = "v2.1-breakout-fix"
         logger.info(f"AI Picks page render - Code version: {CODE_VERSION}")
         
-        # Always clear cache to ensure fresh data (remove this in production if scans are slow)
-        _KEY = "_combined_scan_result"
-        if _KEY in st.session_state:
-            logger.info("Clearing scan cache for fresh data")
-            del st.session_state[_KEY]
+        # Use cached data (only clear on Force Rescan button click)
         
         ph = st.empty()
-        ph.markdown(loading_html("Running AI scans..."), unsafe_allow_html=True)
+        ph.markdown(loading_html("Loading AI scan results..."), unsafe_allow_html=True)
         
         try:
             vcp_df, vcp_charts, elder_df, elder_charts = run_combined_scan_cached()
