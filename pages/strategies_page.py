@@ -279,25 +279,11 @@ def render(slot):
             st.info(f"No stocks with score > 70. Max score in data: {df['best_score'].max():.1f}")
             df_filtered = df.head(10)
 
-        c1, c2, c3, c4, c5 = st.columns(5)
+        c1, c2, c3, c4 = st.columns(4)
         c1.metric("Total Setups", len(df_filtered))
         c2.metric("Avg Score", f"{df_filtered['best_score'].mean():.1f}")
         c3.metric("High Volume", len(df_filtered[df_filtered['volume_ratio'] >= 1.5]))
         c4.metric("Near 52W High", len(df_filtered[df_filtered['dist_52h_pct'] >= -5]))
-        
-        # Add force rescan button
-        with c5:
-            if st.button("🔄 Force Rescan", help="Clear cache and run fresh scan", use_container_width=True):
-                # Clear database cache
-                from database import get_conn
-                with get_conn() as conn:
-                    conn.execute("DELETE FROM scan_results_cache")
-                    conn.commit()
-                # Clear session state
-                if _SCAN_KEY in st.session_state:
-                    del st.session_state[_SCAN_KEY]
-                st.cache_data.clear()
-                st.rerun()
 
         st.markdown("---")
         st.markdown('<div style="font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Strategy Setups - Click to Expand for Chart</div>', unsafe_allow_html=True)

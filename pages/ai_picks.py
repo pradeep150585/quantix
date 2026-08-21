@@ -206,26 +206,11 @@ def _render_vcp(df: pd.DataFrame, chart_store: dict):
     near_pivot = df[(df["is_breakout"] == False) & (df["dist_52h_pct"] >= -20)]
     avg_score  = df["vcp_score"].mean()
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("VCP Setups",       len(df))
     c2.metric("Active Breakouts", len(breakouts))
     c3.metric("Near Pivot",       len(near_pivot))
     c4.metric("Avg VCP Score",    f"{avg_score:.1f}")
-    
-    # Add force rescan button
-    with c5:
-        if st.button("🔄 Force Rescan", help="Clear cache and run fresh VCP scan", use_container_width=True, key="vcp_rescan"):
-            # Clear all VCP-related session state
-            if "_vcp_scan_df" in st.session_state:
-                del st.session_state["_vcp_scan_df"]
-            if "_vcp_chart_store" in st.session_state:
-                del st.session_state["_vcp_chart_store"]
-            if "_vcp_last_refresh" in st.session_state:
-                del st.session_state["_vcp_last_refresh"]
-            if "_combined_scan_result" in st.session_state:
-                del st.session_state["_combined_scan_result"]
-            st.cache_data.clear()
-            st.rerun()
     
     # Info message about filtering
     filtered_count = total_before - len(df)
@@ -315,6 +300,44 @@ def render(slot):
             return
         
         ph.empty()
+
+        # Refresh live prices periodically (similar to strategies page)
+        import time
+        from services.market_data import get_quotes, parse_quote
+        
+        _REFRESH_INTERVAL = 15  # seconds
+        _LAST_REFRESH_KEY = "_ai_picks_last_refresh"
+        
+        now = time.time()
+        last = st.session_state.get(_LAST_REFRESH_KEY, 0)
+        
+        if now - last >= _REFRESH_INTERVAL and not vcp_df.empty:
+            try:
+                # Refresh VCP prices
+                keys = vcp_df["instrument_key"].tolist()
+                if keys:
+                    import asyncio
+                    try:
+                        loop = asyncio.new_event_loop()
+                        raw = loop.run_until_complete(get_quotes(keys))
+                        loop.close()
+                    except:
+                        loop = asyncio.get_event_loop()
+                        raw = loop.run_until_complete(get_quotes(keys))
+                    
+                    if raw:
+                        vcp_df = vcp_df.copy()
+                        for i, row in vcp_df.iterrows():
+                            q = parse_quote(raw.get(row["instrument_key"], {}))
+                            if q and q.get("ltp", 0) > 0:
+                                ltp = q["ltp"]
+                                prev = q.get("prev_close", 0)
+                                vcp_df.at[i, "cmp"] = round(ltp, 2)
+                                vcp_df.at[i, "pct_change"] = round((ltp - prev) / prev * 100, 2) if prev else 0
+            except Exception as e:
+                logger.debug(f"Price refresh failed: {e}")
+            
+            st.session_state[_LAST_REFRESH_KEY] = now
 
         tab_vcp, tab_elder = st.tabs(["VCP Scanner", "Elder Triple Screen"])
         with tab_vcp:

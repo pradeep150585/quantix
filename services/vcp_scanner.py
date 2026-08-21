@@ -292,8 +292,9 @@ async def run_vcp_scan() -> tuple[pd.DataFrame, dict]:
     all_keys = symbols_df["instrument_key"].tolist()
     await bulk_prefetch_today_ohlc(all_keys)
 
-    # Fetch live LTP for all symbols in one call
-    ltp_raw = await get_ltp(all_keys)
+    # Don't fetch live LTP - use historical close price for consistency
+    # This ensures VCP results are deterministic and match between local/cloud
+    ltp_raw = {}
 
     # Reduced semaphore for better stability in Streamlit
     sem     = asyncio.Semaphore(50)
