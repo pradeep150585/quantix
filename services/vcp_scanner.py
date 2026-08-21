@@ -2,13 +2,13 @@
 VCP (Volatility Contraction Pattern) Scanner for AI Picks.
 
 Criteria:
-1. Stage-2 uptrend: close > 10 WMA > 30 WMA (weekly equivalent)
+1. Stage-2 uptrend: close > 10 MA > 30 MA
 2. 2-4 successive price contractions (each smaller than previous)
 3. Volatility squeeze: ATR(14) contracting + BB width near multi-month low
 4. Volume dry-up during final contraction
 5. Breakout: close > pivot high with volume >= 1.5x avg
 
-Uses weekly timeframe for more stable patterns.
+Uses daily timeframe for intraday and swing trading setups.
 """
 import asyncio
 import numpy as np
@@ -31,20 +31,7 @@ _MIN_CONTRACTIONS = 2
 _MAX_CONTRACTIONS = 4
 
 
-def _resample_to_weekly(df: pd.DataFrame) -> pd.DataFrame:
-    """Resample daily OHLCV to weekly (week ending Friday)."""
-    if df.empty or "datetime" not in df.columns:
-        return df
-    df = df.set_index("datetime")
-    wdf = df.resample("W-FRI").agg(
-        open=("open", "first"),
-        high=("high", "max"),
-        low=("low", "min"),
-        close=("close", "last"),
-        volume=("volume", "sum"),
-    ).dropna()
-    wdf.index.name = "datetime"
-    return wdf.reset_index()
+# Removed weekly resampling - now using daily timeframe
 
 
 # ── Trend ─────────────────────────────────────────────────────────────────────
@@ -53,9 +40,9 @@ def _stage2_uptrend(df: pd.DataFrame) -> bool:
     if len(df) < 15:
         return False
     close  = df["close"]
-    wma10  = close.rolling(10).mean().iloc[-1]
-    wma30  = close.rolling(30).mean().iloc[-1]
-    return bool(close.iloc[-1] > wma10 > wma30)
+    ma10  = close.rolling(10).mean().iloc[-1]
+    ma30  = close.rolling(30).mean().iloc[-1]
+    return bool(close.iloc[-1] > ma10 > ma30)
 
 
 # ── Swing detection ───────────────────────────────────────────────────────────
@@ -281,11 +268,10 @@ async def _process(row: pd.Series, ltp_map: dict,
         ikey   = row.get("instrument_key", f"NSE_EQ|{isin}")
         try:
             df       = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
-            wdf      = _resample_to_weekly(df)
-            if wdf.empty or len(wdf) < 15:
+            if df.empty or len(df) < 15:
                 return None
             live_ltp = ltp_map.get(ikey, {}).get("last_price", 0.0)
-            return _analyse_stock(wdf, symbol, row.get("company_name", symbol),
+            return _analyse_stock(df, symbol, row.get("company_name", symbol),
                                 row.get("sector", ""), ikey, live_ltp)
         except Exception as e:
             logger.debug(f"VCP scan error {symbol}: {e}")

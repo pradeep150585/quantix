@@ -2,19 +2,19 @@
 Elder Triple Screen Swing Scanner — NSE 200
 Based on Alexander Elder's "Trading for a Living" framework.
 
-Screens (all on weekly timeframe):
-  1. Weekly trend (MACD Histogram slope, EMA13, ADX, Force Index)
+Screens (all on daily timeframe):
+  1. Daily trend (MACD Histogram slope, EMA13, ADX, Force Index)
   2. Price action (higher lows, breakout structure)
   3. Volume confirmation
   4. Risk/Reward ratio
 
 Scoring (0-100):
-  Weekly Trend   35 pts
+  Daily Trend    35 pts
   Price Action   30 pts
   Volume         20 pts
   Risk/Reward    15 pts
 
-Uses weekly timeframe for stable swing trading setups.
+Uses daily timeframe for intraday and swing trading setups.
 """
 from __future__ import annotations
 
@@ -31,20 +31,7 @@ _CHART_BARS = 80
 _MIN_RR     = 1.5
 
 
-def _resample_to_weekly(df: pd.DataFrame) -> pd.DataFrame:
-    """Resample daily OHLCV to weekly (week ending Friday)."""
-    if df.empty or "datetime" not in df.columns:
-        return df
-    df = df.set_index("datetime")
-    wdf = df.resample("W-FRI").agg(
-        open=("open", "first"),
-        high=("high", "max"),
-        low=("low", "min"),
-        close=("close", "last"),
-        volume=("volume", "sum"),
-    ).dropna()
-    wdf.index.name = "datetime"
-    return wdf.reset_index()
+# Removed weekly resampling - now using daily timeframe
 
 
 # ── Low-level indicator helpers ───────────────────────────────────────────────
@@ -107,18 +94,18 @@ def _swing_highs(series: pd.Series, order: int = 2) -> list[int]:
     return out
 
 
-# ── Weekly Trend Screen (35 pts) ──────────────────────────────────────────────
+# ── Daily Trend Screen (35 pts) ──────────────────────────────────────────────
 
-def _weekly_screen(wdf: pd.DataFrame) -> tuple[int, dict]:
+def _daily_screen(df: pd.DataFrame) -> tuple[int, dict]:
     """Returns (score 0-35, detail dict)."""
-    if len(wdf) < 15:
+    if len(df) < 15:
         return 0, {}
 
-    close  = wdf["close"]
+    close  = df["close"]
     hist   = _macd_hist(close)
     ema13  = _ema(close, 13)
-    adx_v, di_plus, di_minus = _adx(wdf, 13)
-    fi     = _force_index(wdf)
+    adx_v, di_plus, di_minus = _adx(df, 13)
+    fi     = _force_index(df)
     fi13   = _ema(fi, 13)
 
     h_now  = float(hist.iloc[-1])
@@ -149,7 +136,7 @@ def _weekly_screen(wdf: pd.DataFrame) -> tuple[int, dict]:
         score += 4
 
     detail = {
-        "weekly_score":       score,
+        "daily_score":        score,
         "macd_hist_rising":   hist_rising,
         "macd_hist_now":      round(h_now, 4),
         "ema13_rising":       ema13_rising,
@@ -319,46 +306,46 @@ def _grade(score: int) -> str:
 
 # ── Per-stock analysis ────────────────────────────────────────────────────────
 
-def _analyse(wdf: pd.DataFrame, symbol: str, company: str,
+def _analyse(df: pd.DataFrame, symbol: str, company: str,
              sector: str, ikey: str, live_ltp: float) -> dict | None:
-    if wdf.empty or len(wdf) < 15:
+    if df.empty or len(df) < 15:
         return None
 
-    w_score, w_det = _weekly_screen(wdf)
-    if w_score < 15:
+    d_score, d_det = _daily_screen(df)
+    if d_score < 15:
         return None
 
-    pa_score, pa_det, entry, stop, resistance = _price_action_screen(wdf)
+    pa_score, pa_det, entry, stop, resistance = _price_action_screen(df)
     if pa_score < 10:
         return None
 
     breakout = pa_det.get("breakout_5b", False)
-    v_score,  v_det  = _volume_screen(wdf, breakout)
+    v_score,  v_det  = _volume_screen(df, breakout)
 
-    close = wdf["close"]
+    close = df["close"]
     cmp = live_ltp if live_ltp > 0 else float(close.iloc[-1])
     rr_score, rr_det = _rr_screen(cmp, entry, stop, resistance)
 
     if rr_det.get("signal") == "NO TRADE":
         return None
 
-    total = w_score + pa_score + v_score + rr_score
+    total = d_score + pa_score + v_score + rr_score
 
-    prev   = float(close.iloc[-2]) if len(wdf) > 1 else cmp
+    prev   = float(close.iloc[-2]) if len(df) > 1 else cmp
     pct    = round((cmp - prev) / prev * 100, 2) if prev else 0.0
 
-    atr_s  = _atr(wdf)
+    atr_s  = _atr(df)
     atr_v  = round(float(atr_s.iloc[-1]), 2)
 
-    high52 = float(wdf["high"].tail(52).max())
-    low52  = float(wdf["low"].tail(52).min())
+    high52 = float(df["high"].tail(52).max())
+    low52  = float(df["low"].tail(52).min())
     dist52h = round((cmp - high52) / high52 * 100, 2) if high52 else 0.0
 
     # Chart data
-    chart_df = wdf.tail(_CHART_BARS).copy().reset_index(drop=True)
+    chart_df = df.tail(_CHART_BARS).copy().reset_index(drop=True)
     chart_df["ema13"]  = _ema(close, 13).tail(_CHART_BARS).values
     chart_df["ema26"]  = _ema(close, 26).tail(_CHART_BARS).values
-    chart_df["fi2"]    = _ema(_force_index(wdf), 2).tail(_CHART_BARS).values
+    chart_df["fi2"]    = _ema(_force_index(df), 2).tail(_CHART_BARS).values
     chart_df["macd_h"] = _macd_hist(close).tail(_CHART_BARS).values
 
     return {
@@ -383,12 +370,12 @@ def _analyse(wdf: pd.DataFrame, symbol: str, company: str,
         "dist_52h_pct":  dist52h,
         "false_bo_risk": pa_det["false_bo_risk"],
         # sub-scores
-        "weekly_score":  w_score,
+        "daily_score":   d_score,
         "pa_score":      pa_score,
         "vol_score":     v_score,
         "rr_score":      rr_score,
         # detail dicts
-        "_weekly":       w_det,
+        "_daily":        d_det,
         "_pa":           pa_det,
         "_vol":          v_det,
         "_rr":           rr_det,
@@ -406,11 +393,10 @@ async def _process(row: pd.Series, ltp_map: dict,
         ikey   = row.get("instrument_key", f"NSE_EQ|{isin}")
         try:
             df       = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
-            wdf      = _resample_to_weekly(df)
-            if wdf.empty or len(wdf) < 15:
+            if df.empty or len(df) < 15:
                 return None
             live_ltp = ltp_map.get(ikey, {}).get("last_price", 0.0)
-            return _analyse(wdf, symbol, row.get("company_name", symbol),
+            return _analyse(df, symbol, row.get("company_name", symbol),
                             row.get("sector", ""), ikey, live_ltp)
         except Exception as e:
             logger.debug(f"Elder scan error {symbol}: {e}")

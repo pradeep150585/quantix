@@ -85,7 +85,7 @@ def _refresh_prices(keys_tuple: tuple) -> dict:
     return _run(get_quotes(list(keys_tuple)))
 
 def _build_strategy_chart(symbol: str, row: pd.Series):
-    """Build weekly chart with technical indicators as subplots."""
+    """Build daily chart with technical indicators as subplots."""
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
     try:
@@ -94,25 +94,12 @@ def _build_strategy_chart(symbol: str, row: pd.Series):
         if df.empty or len(df) < 50:
             return go.Figure()
 
-        # Resample to weekly
-        df = df.set_index("datetime")
-        wdf = df.resample("W-FRI").agg(
-            open=("open", "first"),
-            high=("high", "max"),
-            low=("low", "min"),
-            close=("close", "last"),
-            volume=("volume", "sum"),
-        ).dropna()
-        wdf = wdf.reset_index()
-
-        if wdf.empty or len(wdf) < 20:
-            return go.Figure()
-
-        dates = wdf["datetime"]
-        close = wdf["close"]
+        # Use daily timeframe directly - no weekly resampling
+        dates = df["datetime"]
+        close = df["close"]
         
         # Compute indicators
-        indicators = compute_all(wdf)
+        indicators = compute_all(df)
         sma50 = close.rolling(50).mean()
         sma150 = close.rolling(150).mean()
         sma200 = close.rolling(200).mean()
@@ -120,7 +107,7 @@ def _build_strategy_chart(symbol: str, row: pd.Series):
         # Extract indicator values
         rsi_series = pd.Series(index=close.index, dtype=float)
         for i in range(len(close)):
-            temp_df = wdf.iloc[:i+1].copy()
+            temp_df = df.iloc[:i+1].copy()
             if len(temp_df) >= 14:
                 delta = temp_df["close"].diff()
                 gain = delta.clip(lower=0).ewm(span=14, adjust=False).mean()
@@ -145,8 +132,8 @@ def _build_strategy_chart(symbol: str, row: pd.Series):
 
         # Row 1: Candlestick + Moving Averages
         fig.add_trace(go.Candlestick(
-            x=dates, open=wdf["open"], high=wdf["high"],
-            low=wdf["low"], close=wdf["close"],
+            x=dates, open=df["open"], high=df["high"],
+            low=df["low"], close=df["close"],
             increasing_line_color=_GREEN, increasing_fillcolor="#0d2b1a",
             decreasing_line_color=_RED, decreasing_fillcolor="#2b0d0d",
             line_width=1, name="Price",
@@ -178,9 +165,9 @@ def _build_strategy_chart(symbol: str, row: pd.Series):
         fig.add_hline(y=0, line=dict(color=_MUTED, width=0.8), row=3, col=1)
 
         # Row 4: Volume
-        vol_colors = [_GREEN if wdf["close"].iloc[i] >= wdf["close"].iloc[i-1] else _RED 
-                      for i in range(len(wdf))]
-        fig.add_trace(go.Bar(x=dates, y=wdf["volume"], marker_color=vol_colors,
+        vol_colors = [_GREEN if df["close"].iloc[i] >= df["close"].iloc[i-1] else _RED 
+                      for i in range(len(df))]
+        fig.add_trace(go.Bar(x=dates, y=df["volume"], marker_color=vol_colors,
             marker_opacity=0.6, name="Volume", showlegend=False), row=4, col=1)
 
         fig.update_layout(
@@ -189,7 +176,7 @@ def _build_strategy_chart(symbol: str, row: pd.Series):
             margin=dict(l=0, r=50, t=40, b=0), height=700,
             showlegend=True,
             xaxis_rangeslider_visible=False,
-            title=dict(text=f"{symbol} - Weekly Technical Analysis",
+            title=dict(text=f"{symbol} - Daily Technical Analysis",
                        font=dict(size=12, color=_WHITE), x=0),
             hovermode="x unified",
         )

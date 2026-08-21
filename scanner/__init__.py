@@ -31,6 +31,10 @@ _SCAN_COLS = [
 ]
 
 
+# Weekly resampling removed - now using daily timeframe for all strategy scoring
+# Weekly resampling removed - now using daily timeframe for all strategy scoring
+
+
 def _load_scan_from_db(today: str) -> Optional[pd.DataFrame]:
     """Load today's scan result from SQLite if it exists."""
     try:
@@ -70,20 +74,7 @@ def _save_scan_to_db(today: str, df: pd.DataFrame):
         logger.warning(f"Could not save scan to DB: {e}")
 
 
-def _resample_to_weekly(df: pd.DataFrame) -> pd.DataFrame:
-    """Resample daily OHLCV to weekly (week ending Friday)."""
-    if df.empty or "datetime" not in df.columns:
-        return df
-    df = df.set_index("datetime")
-    wdf = df.resample("W-FRI").agg(
-        open=("open", "first"),
-        high=("high", "max"),
-        low=("low", "min"),
-        close=("close", "last"),
-        volume=("volume", "sum"),
-    ).dropna()
-    wdf.index.name = "datetime"
-    return wdf.reset_index()
+# Weekly resampling function removed - using daily timeframe
 
 
 async def _process_stock(row: pd.Series, benchmark_df: pd.DataFrame, semaphore: asyncio.Semaphore) -> Optional[dict]:
@@ -97,22 +88,17 @@ async def _process_stock(row: pd.Series, benchmark_df: pd.DataFrame, semaphore: 
             if df.empty or len(df) < 50:
                 return None
 
-            wdf = _resample_to_weekly(df)
-            if wdf.empty or len(wdf) < 20:
-                return None
-
-            wbench = _resample_to_weekly(benchmark_df) if benchmark_df is not None and not benchmark_df.empty else None
-
-            indicators = compute_all(wdf, wbench)
+            # Use daily timeframe directly instead of resampling to weekly
+            indicators = compute_all(df, benchmark_df)
             if not indicators:
                 return None
 
-            scores = score_all(wdf, indicators)
+            scores = score_all(df, indicators)
             best_name, best_score = best_strategy(scores)
             badges = get_badges(indicators, scores)
 
-            cmp = wdf["close"].iloc[-1]
-            prev_close = wdf["close"].iloc[-2] if len(wdf) > 1 else cmp
+            cmp = df["close"].iloc[-1]
+            prev_close = df["close"].iloc[-2] if len(df) > 1 else cmp
             pct_change = (cmp - prev_close) / prev_close * 100 if prev_close else 0
 
             atr_val = indicators.get("atr", 0)
