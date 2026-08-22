@@ -1,22 +1,16 @@
 """
-SEPA Stock Screener - Specific Entry Point Analysis
-Trend Template + RS + Fundamentals + VCP + Pivot Analysis
+SEPA Stock Screener - Mark Minervini's Specific Entry Point Analysis
+From "Trade Like a Stock Market Wizard"
 
-Scoring (0-100):
-  Trend Template      15 pts
-  Relative Strength   15 pts
-  EPS Growth          10 pts
-  EPS Acceleration     8 pts
-  Revenue Growth       8 pts
-  Revenue Accel        6 pts
-  Margin Expansion     6 pts
-  Industry Leadership  6 pts
-  Supply/Demand        5 pts
-  VCP Pattern          7 pts
-  Volume Dry-Up        2 pts
-  Pivot/Breakout       2 pts
-  Base Quality         5 pts
-  Price Tightness      5 pts
+Minervini's SEPA Criteria:
+1. Trend Template (Stage 2 uptrend) - 25 pts
+2. Relative Strength vs Market - 20 pts  
+3. Volatility Contraction Pattern (VCP) - 25 pts
+4. Pivot Point / Constructive Base - 15 pts
+5. Volume Characteristics - 15 pts
+
+Total: 100 pts
+Display: Top 10 stocks only
 """
 import asyncio
 import numpy as np
@@ -58,28 +52,21 @@ def _swing_highs(series: pd.Series, order: int = 2) -> list[int]:
     return highs
 
 
-def _swing_lows(series: pd.Series, order: int = 2) -> list[int]:
-    vals = series.values
-    lows = []
-    for i in range(order, len(vals) - order):
-        if vals[i] == min(vals[i - order: i + order + 1]):
-            lows.append(i)
-    return lows
-
-
-# ── 1. TREND TEMPLATE (15 pts) ────────────────────────────────────────────────
+# ── 1. MINERVINI TREND TEMPLATE (25 pts) ──────────────────────────────────────
 
 def _trend_template(df: pd.DataFrame) -> tuple[int, dict]:
     """
-    8 Conditions:
-    1. Price > 150 SMA AND Price > 200 SMA
-    2. 150 SMA > 200 SMA
-    3. 200 SMA trending up
-    4. 50 SMA > 150 SMA AND 50 SMA > 200 SMA
-    5. Price > 50 SMA
-    6. Price >= 30% above 52-week low
+    Minervini's 8-Point Trend Template (Stage 2 Uptrend):
+    1. Price > 150-day MA and Price > 200-day MA
+    2. 150-day MA > 200-day MA
+    3. 200-day MA trending up for at least 1 month
+    4. 50-day MA > 150-day MA and 50-day MA > 200-day MA
+    5. Price > 50-day MA
+    6. Price at least 30% above 52-week low
     7. Price within 25% of 52-week high
-    8. RS Rank >= 70
+    8. Strong relative performance (RS >= 70)
+    
+    Each condition ~3 points, Total = 25 pts
     """
     if len(df) < 200:
         return 0, {"passed": 0, "conditions": {}}
@@ -99,58 +86,72 @@ def _trend_template(df: pd.DataFrame) -> tuple[int, dict]:
     sma200_21d = _sma(close, 200).iloc[-22] if len(df) >= 222 else sma200
     sma200_up = sma200_now > sma200_21d
     
-    # Placeholder for RS (would need benchmark data)
-    rs_rank = 50  # Default - will calculate if benchmark available
+    # Calculate conditions
+    cond1 = price > sma150 and price > sma200
+    cond2 = sma150 > sma200
+    cond3 = sma200_up
+    cond4 = sma50 > sma150 and sma50 > sma200
+    cond5 = price > sma50
+    cond6 = price >= low_52w * 1.30
+    cond7 = price >= high_52w * 0.75
     
-    conditions = {
-        "c1_price_above_150_200": price > sma150 and price > sma200,
-        "c2_150_above_200": sma150 > sma200,
-        "c3_200_trending_up": sma200_up,
-        "c4_50_above_150_200": sma50 > sma150 and sma50 > sma200,
-        "c5_price_above_50": price > sma50,
-        "c6_30pct_above_52w_low": price >= low_52w * 1.30 if low_52w > 0 else False,
-        "c7_within_25pct_of_52w_high": price >= high_52w * 0.75 if high_52w > 0 else False,
-        "c8_rs_rank_70plus": rs_rank >= 70,
-    }
+    # RS placeholder (use 3/6 month performance as proxy)
+    ret_3m = ((close.iloc[-1] / close.iloc[-63]) - 1) * 100 if len(df) >= 63 else 0
+    ret_6m = ((close.iloc[-1] / close.iloc[-126]) - 1) * 100 if len(df) >= 126 else 0
+    cond8 = ret_3m > 15 and ret_6m > 25  # Strong performance
     
-    passed = sum(conditions.values())
-    score = int((passed / 8) * 15)  # Max 15 points
+    conditions = [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8]
+    passed = sum(conditions)
     
-    # Stage classification
-    if passed >= 7:
-        stage = "Stage 2 Confirmed"
-    elif passed >= 5:
-        stage = "Stage 2 Developing"
-    elif passed >= 3:
-        stage = "Trend Weak"
-    else:
-        stage = "Trend Failed"
+    # Score: 3 points per condition (8 conditions = 24, round to 25)
+    score = int(passed * 3.125)
     
     detail = {
         "passed": passed,
         "total": 8,
         "score": score,
-        "stage": stage,
-        "conditions": conditions,
-        "sma50": round(sma50, 2),
-        "sma150": round(sma150, 2),
-        "sma200": round(sma200, 2),
-        "dist_52h_pct": round((price - high_52w) / high_52w * 100, 2) if high_52w > 0 else 0,
-        "dist_52l_pct": round((price - low_52w) / low_52w * 100, 2) if low_52w > 0 else 0,
+        "conditions": {
+            "price_above_ma": cond1,
+            "ma150_above_ma200": cond2,
+            "ma200_trending_up": cond3,
+            "ma50_above_long_ma": cond4,
+            "price_above_ma50": cond5,
+            "30pct_above_low": cond6,
+            "within_25pct_high": cond7,
+            "strong_rs": cond8,
+        },
+        "values": {
+            "price": round(price, 2),
+            "sma50": round(sma50, 2),
+            "sma150": round(sma150, 2),
+            "sma200": round(sma200, 2),
+            "high_52w": round(high_52w, 2),
+            "low_52w": round(low_52w, 2),
+            "dist_from_high_pct": round(((price - high_52w) / high_52w) * 100, 1),
+            "dist_from_low_pct": round(((price - low_52w) / low_52w) * 100, 1),
+        },
     }
     
     return score, detail
 
 
-# ── 2. RELATIVE STRENGTH (15 pts) ─────────────────────────────────────────────
+# ── 2. RELATIVE STRENGTH (20 pts) ─────────────────────────────────────────────
 
-def _relative_strength(df: pd.DataFrame, benchmark_df: pd.DataFrame = None) -> tuple[int, dict]:
+def _relative_strength(df: pd.DataFrame) -> tuple[int, dict]:
     """
-    Calculate RS rank based on price performance
-    3m: 40%, 6m: 20%, 9m: 20%, 12m: 20%
+    Minervini's Relative Strength:
+    - IBD RS Rating equivalent (0-99 scale)
+    - Weighted average of 3/6/9/12 month returns
+    - Weights recent performance higher
+    
+    RS > 80: 20 pts (Top 20%)
+    RS 70-80: 15 pts (Top 30%)
+    RS 60-70: 10 pts
+    RS 50-60: 5 pts
+    RS < 50: 0 pts
     """
     if len(df) < 63:
-        return 0, {"rs_rank": 0, "classification": "Insufficient Data"}
+        return 0, {"rs_rating": 0}
     
     close = df["close"]
     
@@ -160,211 +161,171 @@ def _relative_strength(df: pd.DataFrame, benchmark_df: pd.DataFrame = None) -> t
     ret_9m = ((close.iloc[-1] / close.iloc[-189]) - 1) * 100 if len(df) >= 189 else 0
     ret_12m = ((close.iloc[-1] / close.iloc[-252]) - 1) * 100 if len(df) >= 252 else 0
     
-    # Weighted composite
-    composite = (ret_3m * 0.4 + ret_6m * 0.2 + ret_9m * 0.2 + ret_12m * 0.2)
+    # Weighted RS (Minervini weights recent performance higher)
+    # 40% last 3m, 30% last 6m, 20% last 9m, 10% last 12m
+    weighted_return = (ret_3m * 0.4) + (ret_6m * 0.3) + (ret_9m * 0.2) + (ret_12m * 0.1)
     
-    # Placeholder RS rank (would need universe comparison)
-    # For now, use composite score normalized
-    rs_rank = min(99, max(1, int(50 + composite / 2)))  # Rough estimate
-    
-    # Score
-    if rs_rank >= 90:
-        score = 15
-        classification = "Elite Leader"
-    elif rs_rank >= 80:
-        score = 13
-        classification = "Strong Leader"
-    elif rs_rank >= 70:
-        score = 10
-        classification = "Qualified"
-    elif rs_rank >= 60:
-        score = 7
-        classification = "Developing"
+    # Convert to RS rating (approximate IBD RS)
+    if weighted_return >= 40:
+        rs_rating = min(99, 80 + (weighted_return - 40) / 3)
+    elif weighted_return >= 20:
+        rs_rating = 60 + (weighted_return - 20)
+    elif weighted_return >= 0:
+        rs_rating = 50 + (weighted_return / 2)
     else:
-        score = 3
-        classification = "Weak"
+        rs_rating = max(0, 50 + weighted_return)
+    
+    # Score based on RS rating
+    if rs_rating >= 80:
+        score = 20
+    elif rs_rating >= 70:
+        score = 15
+    elif rs_rating >= 60:
+        score = 10
+    elif rs_rating >= 50:
+        score = 5
+    else:
+        score = 0
     
     detail = {
-        "rs_rank": rs_rank,
-        "classification": classification,
+        "rs_rating": round(rs_rating, 0),
+        "weighted_return": round(weighted_return, 1),
+        "ret_3m": round(ret_3m, 1),
+        "ret_6m": round(ret_6m, 1),
+        "ret_9m": round(ret_9m, 1),
+        "ret_12m": round(ret_12m, 1),
         "score": score,
-        "ret_3m": round(ret_3m, 2),
-        "ret_6m": round(ret_6m, 2),
-        "ret_9m": round(ret_9m, 2),
-        "ret_12m": round(ret_12m, 2),
-        "composite": round(composite, 2),
     }
     
     return score, detail
 
 
-# ── 3. VCP PATTERN (7 pts) ────────────────────────────────────────────────────
+# ── 3. VCP PATTERN (25 pts) ───────────────────────────────────────────────────
 
 def _vcp_pattern(df: pd.DataFrame) -> tuple[int, dict]:
-    """Detect Volatility Contraction Pattern"""
-    if len(df) < 30:
+    """
+    Minervini's Volatility Contraction Pattern:
+    - 2-4+ contractions (pullbacks getting tighter)
+    - Each pullback smaller than previous
+    - Volume drying up on pullbacks
+    - Tight price action near highs
+    - Proper base structure (3+ weeks minimum)
+    
+    Perfect VCP (tight, 3-4 contractions): 25 pts
+    Good VCP (2-3 contractions): 15-20 pts
+    Developing VCP: 5-10 pts
+    No VCP: 0 pts
+    """
+    if len(df) < 60:
         return 0, {"vcp_detected": False, "contractions": []}
     
-    # Look at last 60 bars
-    window = df.tail(60)
+    # Look at last 60-100 bars for base
+    window = df.tail(100)
     highs = window["high"].values
     
     # Find swing highs
-    high_peaks = _swing_highs(window["high"], order=2)
+    high_peaks = _swing_highs(window["high"], order=3)
     
     if len(high_peaks) < 3:
         return 0, {"vcp_detected": False, "contractions": [], "num_contractions": 0}
     
-    # Calculate contractions between consecutive highs
+    # Calculate contraction depths between consecutive highs
     contractions = []
     for i in range(len(high_peaks) - 1):
         idx1 = high_peaks[i]
         idx2 = high_peaks[i + 1]
         high1 = highs[idx1]
         low_between = window["low"].iloc[idx1:idx2+1].min()
-        contraction_pct = (high1 - low_between) / high1 * 100
-        if contraction_pct >= 2:
+        contraction_pct = ((high1 - low_between) / high1) * 100
+        
+        # Minervini looks for contractions 8-25%
+        if 3 <= contraction_pct <= 30:
             contractions.append(contraction_pct)
     
-    # Check if tightening (each contraction smaller than previous)
-    is_tightening = len(contractions) >= 2 and all(
-        contractions[i] < contractions[i-1] for i in range(1, len(contractions))
-    )
+    if len(contractions) < 2:
+        return 0, {"vcp_detected": False, "contractions": contractions, "num_contractions": len(contractions)}
+    
+    # Check if contractions are tightening (each smaller than previous)
+    is_tightening = all(contractions[i] < contractions[i-1] for i in range(1, len(contractions)))
+    
+    # Check tightness of last contraction
+    last_contraction = contractions[-1] if contractions else 0
     
     vcp_detected = is_tightening and len(contractions) >= 2
     
-    # Score
+    # Score based on VCP quality
     if vcp_detected:
-        if len(contractions) >= 3 and contractions[-1] < 8:
-            score = 7  # Excellent VCP
+        if len(contractions) >= 4 and last_contraction < 8:
+            score = 25  # Perfect VCP
+        elif len(contractions) >= 3 and last_contraction < 12:
+            score = 20  # Strong VCP
         elif len(contractions) >= 3:
-            score = 5  # Good VCP
+            score = 15  # Good VCP
+        elif len(contractions) >= 2 and last_contraction < 15:
+            score = 10  # Developing VCP
         else:
-            score = 3  # Developing VCP
+            score = 5   # Weak VCP
     else:
         score = 0
     
     detail = {
         "vcp_detected": vcp_detected,
         "num_contractions": len(contractions),
-        "contractions": [round(c, 1) for c in contractions],
+        "contractions": [round(c, 1) for c in contractions[-4:]],  # Last 4
+        "is_tightening": is_tightening,
+        "last_contraction_pct": round(last_contraction, 1),
         "score": score,
-        "quality": "Excellent" if score == 7 else ("Good" if score >= 5 else ("Developing" if score > 0 else "None")),
+        "quality": "Perfect" if score >= 20 else ("Good" if score >= 15 else ("Developing" if score > 0 else "None")),
     }
     
     return score, detail
 
 
-# ── 4. VOLUME DRY-UP (2 pts) ──────────────────────────────────────────────────
+# ── 4. PIVOT POINT & BASE (15 pts) ────────────────────────────────────────────
 
-def _volume_dryup(df: pd.DataFrame) -> tuple[int, dict]:
-    """Check for volume contraction in recent bars"""
+def _pivot_point(df: pd.DataFrame) -> tuple[int, dict]:
+    """
+    Minervini's Pivot Point:
+    - Constructive base (3-12 weeks ideal)
+    - Price near pivot (within 5%)
+    - Breakout with volume
+    - Proper base depth (10-40% ideal)
+    
+    At Pivot + Volume: 15 pts
+    Near Pivot (within 5%): 10 pts
+    In Base: 5 pts
+    Extended: 0 pts
+    """
     if len(df) < 50:
-        return 0, {"dryup": False}
+        return 0, {"status": "Unknown"}
     
-    recent_vol = df["volume"].iloc[-5:].mean()
-    avg_vol_50 = df["volume"].iloc[-50:].mean()
+    # Find recent high (pivot point)
+    window = df.tail(60)
+    pivot = window["high"].max()
     
-    vol_ratio = recent_vol / avg_vol_50 if avg_vol_50 > 0 else 1.0
-    
-    if vol_ratio < 0.6:
-        score = 2
-        classification = "Extreme Dry-Up"
-    elif vol_ratio < 0.8:
-        score = 1
-        classification = "Strong Dry-Up"
-    else:
-        score = 0
-        classification = "No Dry-Up"
-    
-    detail = {
-        "dryup": score > 0,
-        "vol_ratio": round(vol_ratio, 2),
-        "classification": classification,
-        "score": score,
-    }
-    
-    return score, detail
-
-
-# ── 5. PRICE TIGHTNESS (5 pts) ────────────────────────────────────────────────
-
-def _price_tightness(df: pd.DataFrame) -> tuple[int, dict]:
-    """Measure price range contraction"""
-    if len(df) < 20:
-        return 0, {"tight": False}
-    
-    close = df["close"]
-    
-    # Calculate ATR as % of price
-    atr_val = _atr(df, 14).iloc[-1]
-    atr_pct = (atr_val / close.iloc[-1]) * 100 if close.iloc[-1] > 0 else 0
-    
-    # 10-day price range
-    high_10 = df["high"].iloc[-10:].max()
-    low_10 = df["low"].iloc[-10:].min()
-    range_10 = (high_10 - low_10) / low_10 * 100 if low_10 > 0 else 0
-    
-    # Score based on tightness
-    if atr_pct < 2 and range_10 < 5:
-        score = 5
-        classification = "Extremely Tight"
-    elif atr_pct < 3 and range_10 < 8:
-        score = 3
-        classification = "Tight"
-    elif atr_pct < 5 and range_10 < 12:
-        score = 1
-        classification = "Moderate"
-    else:
-        score = 0
-        classification = "Loose"
-    
-    detail = {
-        "tight": score >= 3,
-        "atr_pct": round(atr_pct, 2),
-        "range_10d_pct": round(range_10, 2),
-        "classification": classification,
-        "score": score,
-    }
-    
-    return score, detail
-
-
-# ── 6. PIVOT/BREAKOUT (2 pts) ─────────────────────────────────────────────────
-
-def _pivot_breakout(df: pd.DataFrame) -> tuple[int, dict]:
-    """Detect pivot and breakout status"""
-    if len(df) < 20:
-        return 0, {"pivot": 0, "status": "Unknown"}
-    
-    # Find recent pivot (highest high in last 20 bars)
-    pivot = df["high"].tail(20).max()
     price = df["close"].iloc[-1]
+    vol_recent = df["volume"].iloc[-5:].mean()
+    vol_avg = df["volume"].iloc[-50:].mean()
+    vol_ratio = vol_recent / vol_avg if vol_avg > 0 else 1.0
     
-    # Distance to pivot
-    dist_to_pivot = ((price - pivot) / pivot * 100) if pivot > 0 else 0
+    dist_to_pivot = ((price - pivot) / pivot) * 100
     
-    # Breakout detection
-    volume = df["volume"].iloc[-1]
-    avg_volume = df["volume"].iloc[-50:].mean()
-    vol_ratio = volume / avg_volume if avg_volume > 0 else 1.0
-    
-    # Classify
-    if price > pivot and vol_ratio > 1.3:
-        score = 2
+    # Check if breaking out
+    if dist_to_pivot >= -1 and dist_to_pivot <= 2 and vol_ratio > 1.2:
+        score = 15
         status = "Breakout"
-    elif dist_to_pivot >= -3 and dist_to_pivot <= 0:
-        score = 1
+    elif dist_to_pivot >= -5 and dist_to_pivot <= 0:
+        score = 10
         status = "At Pivot"
-    elif dist_to_pivot > 0 and dist_to_pivot < 5:
-        score = 1
-        status = "Early Breakout"
-    elif dist_to_pivot > -10:
-        score = 0
-        status = "Approaching"
+    elif dist_to_pivot >= -15 and dist_to_pivot < -5:
+        score = 5
+        status = "In Base"
+    elif dist_to_pivot < -15:
+        score = 2
+        status = "Deep Base"
     else:
         score = 0
-        status = "Developing"
+        status = "Extended"
     
     detail = {
         "pivot": round(pivot, 2),
@@ -378,42 +339,52 @@ def _pivot_breakout(df: pd.DataFrame) -> tuple[int, dict]:
     return score, detail
 
 
-# ── 7. SUPPLY/DEMAND (5 pts) ──────────────────────────────────────────────────
+# ── 5. VOLUME ANALYSIS (15 pts) ───────────────────────────────────────────────
 
-def _supply_demand(df: pd.DataFrame) -> tuple[int, dict]:
-    """Analyze supply/demand through volume"""
-    if len(df) < 20:
+def _volume_analysis(df: pd.DataFrame) -> tuple[int, dict]:
+    """
+    Minervini Volume Characteristics:
+    - Dry-up on pullbacks (volume below average)
+    - Accumulation (up days on higher volume)
+    - Pocket pivot characteristics
+    
+    Excellent volume profile: 15 pts
+    Good: 10 pts
+    Average: 5 pts
+    Poor: 0 pts
+    """
+    if len(df) < 50:
         return 0, {"classification": "Unknown"}
     
-    # Up days vs down days volume
-    up_days = df[df["close"] > df["close"].shift()].tail(20)
-    down_days = df[df["close"] < df["close"].shift()].tail(20)
+    # Volume dry-up on recent bars
+    vol_recent = df["volume"].iloc[-10:].mean()
+    vol_avg = df["volume"].iloc[-50:].mean()
+    dryup_ratio = vol_recent / vol_avg if vol_avg > 0 else 1.0
     
-    up_vol = up_days["volume"].sum()
-    down_vol = down_days["volume"].sum()
+    # Accumulation/Distribution (up days vs down days volume)
+    recent_20 = df.tail(20).copy()
+    recent_20["price_change"] = recent_20["close"].diff()
+    up_days = recent_20[recent_20["price_change"] > 0]
+    down_days = recent_20[recent_20["price_change"] < 0]
     
-    vol_ratio = up_vol / (down_vol + 1) if down_vol > 0 else 1.0
+    up_vol = up_days["volume"].sum() if len(up_days) > 0 else 1
+    down_vol = down_days["volume"].sum() if len(down_days) > 0 else 1
+    accum_ratio = up_vol / (down_vol + 1)
     
-    # Classify
-    if vol_ratio > 2:
-        score = 5
-        classification = "Strong Accumulation"
-    elif vol_ratio > 1.5:
-        score = 3
-        classification = "Moderate Accumulation"
-    elif vol_ratio > 0.66:
-        score = 2
-        classification = "Neutral"
-    elif vol_ratio > 0.5:
-        score = 1
-        classification = "Distribution"
+    # Score
+    if dryup_ratio < 0.7 and accum_ratio > 1.5:
+        score = 15  # Excellent: dry-up + accumulation
+    elif dryup_ratio < 0.8 and accum_ratio > 1.2:
+        score = 10  # Good
+    elif dryup_ratio < 1.0 or accum_ratio > 1.0:
+        score = 5   # Average
     else:
-        score = 0
-        classification = "Heavy Distribution"
+        score = 0   # Poor
     
     detail = {
-        "classification": classification,
-        "up_vol_ratio": round(vol_ratio, 2),
+        "dryup_ratio": round(dryup_ratio, 2),
+        "accum_ratio": round(accum_ratio, 2),
+        "classification": "Excellent" if score >= 15 else ("Good" if score >= 10 else ("Average" if score > 0 else "Poor")),
         "score": score,
     }
     
@@ -424,125 +395,107 @@ def _supply_demand(df: pd.DataFrame) -> tuple[int, dict]:
 
 def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
                    sector: str, instrument_key: str) -> dict | None:
-    """Analyze single stock for SEPA criteria"""
+    """
+    Minervini SEPA Analysis
     
-    if df.empty or len(df) < 200:
+    Score breakdown (0-100):
+    - Trend Template: 25 pts
+    - Relative Strength: 20 pts
+    - VCP Pattern: 25 pts
+    - Pivot Point: 15 pts
+    - Volume: 15 pts
+    """
+    
+    if df.empty or len(df) < 60:
+        logger.debug(f"{symbol}: Insufficient data ({len(df)} bars)")
         return None
     
-    # Run all screens
+    # Run all SEPA components
     trend_score, trend_detail = _trend_template(df)
     rs_score, rs_detail = _relative_strength(df)
     vcp_score, vcp_detail = _vcp_pattern(df)
-    vol_score, vol_detail = _volume_dryup(df)
-    tight_score, tight_detail = _price_tightness(df)
-    pivot_score, pivot_detail = _pivot_breakout(df)
-    sd_score, sd_detail = _supply_demand(df)
+    pivot_score, pivot_detail = _pivot_point(df)
+    volume_score, volume_detail = _volume_analysis(df)
     
-    # Placeholders for fundamental scores (would need fundamental data)
-    eps_score = 5  # 10 pts max
-    eps_accel_score = 4  # 8 pts max
-    rev_score = 4  # 8 pts max
-    rev_accel_score = 3  # 6 pts max
-    margin_score = 3  # 6 pts max
-    industry_score = 3  # 6 pts max
+    # Calculate total SEPA score (0-100)
+    total_score = trend_score + rs_score + vcp_score + pivot_score + volume_score
     
-    # Calculate total SEPA score
-    total_score = (
-        trend_score +      # 15
-        rs_score +         # 15
-        eps_score +        # 10
-        eps_accel_score +  # 8
-        rev_score +        # 8
-        rev_accel_score +  # 6
-        margin_score +     # 6
-        industry_score +   # 6
-        sd_score +         # 5
-        vcp_score +        # 7
-        tight_score +      # 5
-        vol_score +        # 2
-        pivot_score        # 2
-    )
-    
-    # Grade
-    if total_score >= 90:
-        grade = "Elite SEPA"
-    elif total_score >= 80:
-        grade = "High Conviction"
+    # Minervini's grading
+    if total_score >= 80:
+        grade = "Superperformer"  # Elite SEPA setup
     elif total_score >= 70:
-        grade = "Qualified"
+        grade = "Strong Buy"      # High probability
     elif total_score >= 60:
-        grade = "Watchlist"
+        grade = "Buy"             # Good setup
+    elif total_score >= 50:
+        grade = "Watchlist"       # Potential
     else:
-        grade = "Not Ready"
+        grade = "Pass"            # Not ready
     
-    # Signal
-    if trend_detail["passed"] >= 7 and vcp_detail["vcp_detected"] and pivot_detail["status"] in ["Breakout", "At Pivot"]:
+    # Minervini's entry signal
+    trend_passed = trend_detail["passed"]
+    vcp_detected = vcp_detail["vcp_detected"]
+    at_pivot = pivot_detail["status"] in ["Breakout", "At Pivot"]
+    
+    if trend_passed >= 7 and vcp_detected and at_pivot and volume_score >= 10:
         signal = "BUY NOW"
-    elif trend_detail["passed"] >= 6 and vcp_detail["vcp_detected"]:
+    elif trend_passed >= 6 and vcp_detected and pivot_detail["dist_to_pivot_pct"] >= -10:
         signal = "BUY ON BREAKOUT"
-    elif trend_detail["passed"] >= 5:
+    elif trend_passed >= 5 and total_score >= 60:
         signal = "WATCH"
     else:
-        signal = "NO TRADE"
+        signal = "PASS"
     
     # Price data
     close = df["close"].iloc[-1]
     prev = df["close"].iloc[-2] if len(df) > 1 else close
     pct_change = round((close - prev) / prev * 100, 2) if prev > 0 else 0
     
-    # Risk/Reward
+    # Risk/Reward (Minervini style: 2-3 ATR stop)
     atr_val = _atr(df, 14).iloc[-1]
     entry = pivot_detail["pivot"]
-    stop = round(entry - 2 * atr_val, 2) if atr_val > 0 else round(entry * 0.95, 2)
-    target1 = round(entry + 2 * atr_val, 2)
-    target2 = round(entry + 4 * atr_val, 2)
+    stop = round(entry - 2.5 * atr_val, 2) if atr_val > 0 else round(entry * 0.92, 2)
+    target1 = round(entry * 1.20, 2)  # 20% profit target
+    target2 = round(entry * 1.40, 2)  # 40% extended target
     risk = entry - stop
     reward = target1 - entry
-    rr = round(reward / risk, 2) if risk > 0 else 0
-    
-    # Chart data
-    chart_df = df.tail(_CHART_BARS).copy().reset_index(drop=True)
-    chart_df["sma50"] = _sma(df["close"], 50).tail(_CHART_BARS).values
-    chart_df["sma150"] = _sma(df["close"], 150).tail(_CHART_BARS).values
-    chart_df["sma200"] = _sma(df["close"], 200).tail(_CHART_BARS).values
+    risk_reward = round(reward / risk, 2) if risk > 0 else 0
     
     return {
         "symbol": symbol,
         "company_name": company_name,
         "sector": sector,
         "instrument_key": instrument_key,
-        "cmp": round(close, 2),
-        "pct_change": pct_change,
         "score": total_score,
         "grade": grade,
         "signal": signal,
+        
+        "price": round(close, 2),
+        "change_pct": pct_change,
+        
+        # SEPA components
+        "trend_score": trend_score,
+        "trend_detail": trend_detail,
+        "rs_score": rs_score,
+        "rs_detail": rs_detail,
+        "vcp_score": vcp_score,
+        "vcp_detail": vcp_detail,
+        "pivot_score": pivot_score,
+        "pivot_detail": pivot_detail,
+        "volume_score": volume_score,
+        "volume_detail": volume_detail,
+        
+        # Trade setup
         "entry": entry,
         "stop": stop,
         "target1": target1,
         "target2": target2,
-        "rr": rr,
-        "risk_pct": round((entry - stop) / entry * 100, 2) if entry > 0 else 0,
-        # Sub-scores
-        "trend_score": trend_score,
-        "rs_score": rs_score,
-        "vcp_score": vcp_score,
-        "vol_score": vol_score,
-        "tight_score": tight_score,
-        "pivot_score": pivot_score,
-        "sd_score": sd_score,
-        # Details
-        "_trend": trend_detail,
-        "_rs": rs_detail,
-        "_vcp": vcp_detail,
-        "_vol": vol_detail,
-        "_tight": tight_detail,
-        "_pivot": pivot_detail,
-        "_sd": sd_detail,
-        "_chart_df": chart_df,
+        "risk_reward": risk_reward,
+        "risk_pct": round((risk / entry) * 100, 1) if entry > 0 else 0,
     }
 
 
-# ── ASYNC SCAN ────────────────────────────────────────────────────────────────
+# ── SCANNER EXECUTION ─────────────────────────────────────────────────────────
 
 async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
     """Process single stock"""
@@ -552,15 +505,17 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
         
         try:
             df = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
-            if df.empty or len(df) < 200:
+            if df.empty or len(df) < 60:
                 return None
             
-            return _analyse_stock(
+            result = _analyse_stock(
                 df, symbol,
                 row.get("company_name", symbol),
                 row.get("sector", ""),
                 ikey
             )
+            
+            return result
         except Exception as e:
             logger.debug(f"SEPA scan error {symbol}: {e}")
             return None
@@ -568,40 +523,53 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
 
 async def run_sepa_scan() -> tuple[pd.DataFrame, dict]:
     """
-    Run SEPA scan on Nifty 200 stocks.
-    Returns: (scan_df, chart_store)
+    Run Minervini SEPA scan on NIFTY 200
+    Returns: (DataFrame of TOP 10 stocks, chart_store dict)
     """
-    symbols_df = await get_nifty200_symbols()
-    if symbols_df.empty:
-        logger.error("SEPA scan failed: No symbols retrieved")
+    logger.info("Starting Minervini SEPA scan...")
+    
+    # Get universe
+    nifty200 = await get_nifty200_symbols()
+    
+    # Prefetch today's prices
+    ikeys = nifty200["instrument_key"].tolist()
+    today_map = await bulk_prefetch_today_ohlc(ikeys)
+    today_count = today_map if isinstance(today_map, int) else len(today_map)
+    logger.info(f"SEPA scan: prefetched {today_count} today's candles")
+    
+    # Scan stocks concurrently
+    sem = asyncio.Semaphore(20)
+    tasks = [_process_stock(row, sem) for _, row in nifty200.iterrows()]
+    results = await asyncio.gather(*tasks)
+    
+    # Filter valid results
+    valid = [r for r in results if r is not None]
+    logger.info(f"SEPA scan: {len(valid)} stocks analyzed")
+    
+    if not valid:
         return pd.DataFrame(), {}
     
-    all_keys = symbols_df["instrument_key"].tolist()
+    # Create DataFrame and sort by score
+    df = pd.DataFrame(valid)
+    df = df.sort_values("score", ascending=False).reset_index(drop=True)
     
-    # Prefetch today's data
-    prefetched = await bulk_prefetch_today_ohlc(all_keys)
-    logger.info(f"SEPA scan: prefetched {prefetched} today's candles")
+    # Return TOP 10 ONLY (Minervini-style focus on best setups)
+    top10 = df.head(10)
     
-    # Run scan
-    sem = asyncio.Semaphore(50)
-    tasks = [_process_stock(row, sem) for _, row in symbols_df.iterrows()]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    logger.info(f"SEPA scan: Returning top 10 stocks out of {len(valid)} analyzed")
     
-    # Process results
-    records = [r for r in results if isinstance(r, dict)]
+    # Fetch chart data for top 10
     chart_store = {}
-    clean = []
+    for _, row in top10.iterrows():
+        symbol = row["symbol"]
+        ikey = row["instrument_key"]
+        try:
+            cdf = await get_historical_df(ikey, interval="day", days=_CHART_BARS)
+            if not cdf.empty:
+                chart_store[symbol] = cdf.tail(_CHART_BARS)
+        except Exception as e:
+            logger.warning(f"SEPA: Could not fetch chart for {symbol}: {e}")
     
-    for r in records:
-        chart_store[r["symbol"]] = r.pop("_chart_df")
-        clean.append(r)
+    logger.info(f"SEPA scan: Fetched charts for {len(chart_store)}/{len(top10)} stocks")
     
-    if not clean:
-        return pd.DataFrame(), {}
-    
-    df = pd.DataFrame(clean).sort_values("score", ascending=False).reset_index(drop=True)
-    
-    logger.info(f"SEPA scan: {len(df)} stocks analyzed")
-    logger.debug(f"SEPA stocks: {df['symbol'].tolist()[:10]}...")
-    
-    return df, chart_store
+    return top10, chart_store

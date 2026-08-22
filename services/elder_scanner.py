@@ -405,9 +405,15 @@ async def _process(row: pd.Series, ltp_map: dict,
 
 async def run_elder_scan() -> tuple[pd.DataFrame, dict]:
     """
-    Returns (scan_df, chart_store).
-    scan_df: one row per qualifying stock, sorted by score desc.
-    chart_store: {symbol: chart_df_with_indicators}
+    Dr. Alexander Elder's Triple Screen Trading System
+    Returns (top 10 stocks DataFrame, chart_store dict)
+    
+    Methodology from "Trading for a Living":
+    - Screen 1: Market tide (trend-following indicator on weekly)
+    - Screen 2: Wave (oscillator on daily for pullback)
+    - Screen 3: Intraday breakout (entry timing)
+    
+    We use daily timeframe for all screens (adapted for swing trading)
     """
     symbols_df = await get_nifty200_symbols()
     if symbols_df.empty:
@@ -433,5 +439,11 @@ async def run_elder_scan() -> tuple[pd.DataFrame, dict]:
         return pd.DataFrame(), {}
 
     df = pd.DataFrame(clean).sort_values("score", ascending=False).reset_index(drop=True)
-    logger.info(f"Elder scan: {len(df)} setups from {len(symbols_df)} stocks")
-    return df, chart_store
+    
+    # Return TOP 10 ONLY (Elder's focus on quality over quantity)
+    top10 = df.head(10)
+    top10_chart_store = {sym: chart_store[sym] for sym in top10["symbol"].values if sym in chart_store}
+    
+    logger.info(f"Elder Triple Screen: {len(top10)} top stocks from {len(df)} setups analyzed")
+    
+    return top10, top10_chart_store
