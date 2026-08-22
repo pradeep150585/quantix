@@ -1,5 +1,5 @@
 """
-Elder Triple Screen Swing Scanner page.
+AI Scanner page - Elder Triple Screen & SEPA Screener
 """
 import asyncio
 import traceback
@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from services.elder_scanner import run_elder_scan
+from services.sepa_scanner import run_sepa_scan
 
 _BG     = "#0b0e17"
 _CARD   = "#131722"
@@ -358,6 +359,305 @@ def _render_elder(df: pd.DataFrame, chart_store: dict):
 
 # -- Entry points --------------------------------------------------------------
 
+def _render_sepa(df: pd.DataFrame, chart_store: dict):
+    """Render SEPA scanner results (matches Elder UI pattern)"""
+    if df.empty:
+        st.warning("No stocks meet the SEPA criteria.")
+        return
+    
+    # Summary metrics
+    elite = df[df["grade"] == "Elite SEPA"]
+    high_conv = df[df["grade"] == "High Conviction"]
+    qualified = df[df["grade"] == "Qualified"]
+    buy_now = df[df["signal"] == "BUY NOW"]
+    breakout = df[df["signal"] == "BUY ON BREAKOUT"]
+    vcp_stocks = df[df["vcp_score"] > 0]
+    
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1.metric("Total Stocks", len(df))
+    c2.metric("Elite SEPA", len(elite))
+    c3.metric("High Conviction", len(high_conv))
+    c4.metric("VCP Detected", len(vcp_stocks))
+    c5.metric("Buy Now", len(buy_now))
+    c6.metric("Near Breakout", len(breakout))
+    
+    st.markdown("---")
+    
+    # Tabs for different views
+    tab_all, tab_buy, tab_watch = st.tabs([
+        f"All Setups ({len(df)})",
+        f"Buy Ready ({len(buy_now)})",
+        f"Watch List ({len(breakout)})"
+    ])
+    
+    with tab_all:
+        st.markdown('<div style="font-size:.65rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">All SEPA Candidates</div>', unsafe_allow_html=True)
+        for idx, row in df.head(30).iterrows():
+            _render_sepa_row(row, chart_store, key_prefix=f"all_{idx}")
+    
+    with tab_buy:
+        st.markdown('<div style="font-size:.65rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Buy Ready Stocks</div>', unsafe_allow_html=True)
+        buy_ready = df[df["signal"] == "BUY NOW"]
+        if buy_ready.empty:
+            st.info("No stocks in BUY NOW status")
+        else:
+            for idx, row in buy_ready.head(20).iterrows():
+                _render_sepa_row(row, chart_store, key_prefix=f"buy_{idx}")
+    
+    with tab_watch:
+        st.markdown('<div style="font-size:.65rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Watch List - Near Breakout</div>', unsafe_allow_html=True)
+        watch_list = df[df["signal"] == "BUY ON BREAKOUT"]
+        if watch_list.empty:
+            st.info("No stocks in watch list")
+        else:
+            for idx, row in watch_list.head(20).iterrows():
+                _render_sepa_row(row, chart_store, key_prefix=f"watch_{idx}")
+
+
+def _render_sepa_row(row: pd.Series, chart_store: dict, key_prefix: str = ""):
+    """Render a single SEPA stock row (matches Elder UI pattern)"""
+    symbol  = row.get("symbol", "")
+    score   = row.get("score", 0)
+    grade   = row.get("grade", "")
+    signal  = row.get("signal", "")
+    cmp     = row.get("cmp", 0)
+    pct     = row.get("pct_change", 0)
+    entry   = row.get("entry", 0)
+    stop    = row.get("stop", 0)
+    t1      = row.get("target1", 0)
+    rr      = row.get("rr", 0)
+    trend   = row.get("_trend", {}).get("stage", "")
+    vcp     = row.get("_vcp", {}).get("quality", "None")
+    pct_c   = _GREEN if pct > 0 else (_RED if pct < 0 else _MUTED)
+    pct_s   = f"+{pct:.2f}%" if pct > 0 else f"{pct:.2f}%"
+    grade_c = _grade_color(grade)
+    
+    label = f"{symbol}  |  Rs{cmp:,.2f}  {pct_s}  |  Entry: Rs{entry:,.2f}  |  {signal}  |  SEPA Score {score}"
+    
+    with st.expander(label, expanded=False):
+        # Summary cards
+        components.html(f"""<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}}</style>
+</head><body style="background:#0b0e17;padding:0;">
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:110px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">CMP</div>
+    <div style="font-size:.9rem;font-weight:700;color:#fff;">Rs{cmp:,.2f}
+      <span style="font-size:.65rem;color:{pct_c};margin-left:4px;">{pct_s}</span></div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:110px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Entry</div>
+    <div style="font-size:.9rem;font-weight:700;color:{_YELLOW};">Rs{entry:,.2f}</div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:110px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Stop</div>
+    <div style="font-size:.9rem;font-weight:700;color:{_RED};">Rs{stop:,.2f}</div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:110px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Target 1</div>
+    <div style="font-size:.9rem;font-weight:700;color:{_GREEN};">Rs{t1:,.2f}</div>
+  </div>
+  <div style="background:#131722;border:1px solid #1e2433;border-radius:4px;padding:8px 12px;flex:1;min-width:80px;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">R:R</div>
+    <div style="font-size:.9rem;font-weight:700;color:{'#4ade80' if rr>=2 else _YELLOW};">{rr:.2f}</div>
+  </div>
+  <div style="background:{grade_c}18;border:1px solid {grade_c}44;border-radius:4px;padding:8px 12px;min-width:70px;text-align:center;">
+    <div style="font-size:.58rem;color:#6b7280;text-transform:uppercase;">Grade</div>
+    <div style="font-size:1.1rem;font-weight:800;color:{grade_c};">{grade}</div>
+  </div>
+</div>
+<div style="font-size:.67rem;color:#6b7280;">
+  {row.get('company_name','')} - {row.get('sector','')} - Trend:
+  <span style="color:{'#4ade80' if 'Confirmed' in trend else _YELLOW};">{trend}</span> | VCP: {vcp}
+</div>
+</body></html>""", height=110, scrolling=False)
+        
+        # SEPA Explanation
+        _render_sepa_explanation(row)
+        
+        # Chart
+        cdf = chart_store.get(symbol)
+        if cdf is not None and not cdf.empty:
+            fig = _build_sepa_chart(symbol, row, cdf)
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False}, key=f"{key_prefix}_chart_{symbol}")
+
+
+def _render_sepa_explanation(row: pd.Series):
+    """Render SEPA score breakdown"""
+    trend_d = row.get("_trend", {})
+    rs_d = row.get("_rs", {})
+    vcp_d = row.get("_vcp", {})
+    vol_d = row.get("_vol", {})
+    pivot_d = row.get("_pivot", {})
+    sd_d = row.get("_sd", {})
+    
+    def chk(ok: bool, label: str, val: str = "") -> str:
+        c = _GREEN if ok else _RED
+        i = "&#10003;" if ok else "&#10007;"
+        return (
+            f'<div style="display:flex;justify-content:space-between;padding:3px 0;'
+            f'border-bottom:1px solid #1e2433;">'
+            f'<span style="color:{c};font-weight:600;">{i} {label}</span>'
+            f'<span style="color:#9ca3af;font-size:.68rem;">{val}</span></div>'
+        )
+    
+    def sec(title: str, color: str) -> str:
+        return (
+            f'<div style="font-size:.62rem;font-weight:700;color:{color};'
+            f'text-transform:uppercase;letter-spacing:.08em;margin:10px 0 4px;">'
+            f'{title}</div>'
+        )
+    
+    score = row.get("score", 0)
+    grade = row.get("grade", "")
+    grade_c = _grade_color(grade)
+    
+    conditions = trend_d.get("conditions", {})
+    
+    html = f"""<!DOCTYPE html><html><head>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>*{{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;font-size:.75rem;}}
+body{{background:#0b0e17;color:#d1d4dc;padding:12px;}}</style></head><body>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+  <div>
+    <span style="font-size:1.1rem;font-weight:800;color:#fff;">{row.get('symbol','')}</span>
+    <span style="color:#6b7280;margin-left:6px;font-size:.72rem;">SEPA Analysis</span>
+  </div>
+  <div style="background:{grade_c}18;border:2px solid {grade_c};border-radius:4px;padding:6px 14px;">
+    <span style="font-size:1.2rem;font-weight:800;color:{grade_c};">{score}</span>
+    <span style="font-size:.65rem;color:#6b7280;margin-left:4px;">{grade}</span>
+  </div>
+</div>
+
+{sec("TREND TEMPLATE (15 pts)", _BLUE)}
+{chk(conditions.get('c1_price_above_150_200', False), "Price > 150 & 200 SMA", "")}
+{chk(conditions.get('c2_150_above_200', False), "150 SMA > 200 SMA", "")}
+{chk(conditions.get('c3_200_trending_up', False), "200 SMA Trending Up", "")}
+{chk(conditions.get('c4_50_above_150_200', False), "50 SMA > 150 & 200", "")}
+{chk(conditions.get('c5_price_above_50', False), "Price > 50 SMA", "")}
+{chk(conditions.get('c6_30pct_above_52w_low', False), "30% Above 52W Low", "")}
+{chk(conditions.get('c7_within_25pct_of_52w_high', False), "Within 25% of 52W High", "")}
+{chk(conditions.get('c8_rs_rank_70plus', False), "RS Rank >= 70", "")}
+<div style="font-size:.68rem;color:#9ca3af;margin-top:4px;">
+  Stage: {trend_d.get('stage', '')} | Score: {trend_d.get('score', 0)}/15
+</div>
+
+{sec("RELATIVE STRENGTH (15 pts)", _PURPLE)}
+<div style="display:flex;justify-content:space-between;">
+  <span>RS Rank: <b style="color:#fff;">{rs_d.get('rs_rank', 0)}</b></span>
+  <span style="color:#9ca3af;">{rs_d.get('classification', '')}</span>
+</div>
+<div style="display:flex;justify-content:space-between;font-size:.68rem;color:#9ca3af;margin-top:2px;">
+  <span>3M: {rs_d.get('ret_3m', 0):.1f}%</span>
+  <span>6M: {rs_d.get('ret_6m', 0):.1f}%</span>
+  <span>9M: {rs_d.get('ret_9m', 0):.1f}%</span>
+  <span>12M: {rs_d.get('ret_12m', 0):.1f}%</span>
+</div>
+
+{sec("VCP PATTERN (7 pts)", _ORANGE)}
+{chk(vcp_d.get('vcp_detected', False), "VCP Detected", vcp_d.get('quality', ''))}
+<div style="font-size:.68rem;color:#9ca3af;">
+  Contractions: {" → ".join(str(c) + "%" for c in vcp_d.get('contractions', []))}
+</div>
+
+{sec("VOLUME & TIGHTNESS", _GREEN)}
+{chk(vol_d.get('dryup', False), "Volume Dry-Up", vol_d.get('classification', ''))}
+{chk(row.get('_tight', {}).get('tight', False), "Price Tightness", row.get('_tight', {}).get('classification', ''))}
+
+{sec("PIVOT & BREAKOUT", _YELLOW)}
+<div style="display:flex;justify-content:space-between;">
+  <span>Pivot: Rs{pivot_d.get('pivot', 0):,.2f}</span>
+  <span style="color:#9ca3af;">{pivot_d.get('dist_to_pivot_pct', 0):.1f}% away</span>
+</div>
+<div style="font-size:.68rem;color:#9ca3af;">
+  Status: {pivot_d.get('status', '')} | Vol Ratio: {pivot_d.get('vol_ratio', 0):.2f}x
+</div>
+
+{sec("SUPPLY/DEMAND (5 pts)", _BLUE)}
+<div style="display:flex;justify-content:space-between;">
+  <span>{sd_d.get('classification', '')}</span>
+  <span style="color:#9ca3af;">Ratio: {sd_d.get('up_vol_ratio', 0):.2f}x</span>
+</div>
+
+</body></html>"""
+    
+    components.html(html, height=550, scrolling=True)
+
+
+def _build_sepa_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figure:
+    """Build SEPA chart (matches Elder pattern)"""
+    if cdf.empty:
+        return go.Figure()
+    
+    dates = cdf["datetime"] if "datetime" in cdf.columns else pd.RangeIndex(len(cdf))
+    entry = row.get("entry", 0)
+    stop  = row.get("stop", 0)
+    t1    = row.get("target1", 0)
+    t2    = row.get("target2", 0)
+    
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        row_heights=[0.7, 0.3], vertical_spacing=0.02,
+        subplot_titles=("", "Volume"),
+    )
+    
+    fig.add_trace(go.Candlestick(
+        x=dates, open=cdf["open"], high=cdf["high"],
+        low=cdf["low"], close=cdf["close"],
+        increasing_line_color=_GREEN, increasing_fillcolor="#0d2b1a",
+        decreasing_line_color=_RED,   decreasing_fillcolor="#2b0d0d",
+        line_width=1, name="Price",
+    ), row=1, col=1)
+    
+    if "sma50" in cdf.columns:
+        fig.add_trace(go.Scatter(x=dates, y=cdf["sma50"],
+            line=dict(color=_BLUE, width=1.2), name="SMA 50"), row=1, col=1)
+    if "sma150" in cdf.columns:
+        fig.add_trace(go.Scatter(x=dates, y=cdf["sma150"],
+            line=dict(color=_PURPLE, width=1, dash="dot"), name="SMA 150"), row=1, col=1)
+    if "sma200" in cdf.columns:
+        fig.add_trace(go.Scatter(x=dates, y=cdf["sma200"],
+            line=dict(color=_YELLOW, width=1, dash="dash"), name="SMA 200"), row=1, col=1)
+    
+    for price, color, label in [
+        (entry, _YELLOW, f"Pivot Rs{entry:,.2f}"),
+        (stop,  _RED,    f"Stop Rs{stop:,.2f}"),
+        (t1,    _GREEN,  f"T1 Rs{t1:,.2f}"),
+        (t2,    "#4ade80", f"T2 Rs{t2:,.2f}"),
+    ]:
+        if price > 0:
+            fig.add_hline(y=price, line=dict(color=color, width=1.2, dash="dash"),
+                annotation_text=f"  {label}",
+                annotation_position="right",
+                annotation_font=dict(color=color, size=9),
+                row=1, col=1)
+    
+    if "volume" in cdf.columns:
+        vol_colors = [_GREEN if cdf["close"].iloc[i] >= cdf["close"].iloc[i-1] else _RED 
+                      for i in range(len(cdf))]
+        fig.add_trace(go.Bar(x=dates, y=cdf["volume"], marker_color=vol_colors,
+            marker_opacity=0.7, name="Volume", showlegend=False), row=2, col=1)
+    
+    fig.update_layout(
+        paper_bgcolor=_BG, plot_bgcolor=_BG,
+        font=dict(color=_TEXT, size=9, family="Inter"),
+        margin=dict(l=0, r=50, t=20, b=0), height=400,
+        showlegend=False,
+        xaxis_rangeslider_visible=False,
+        title=dict(text=f"{symbol} - SEPA Analysis",
+                   font=dict(size=11, color=_WHITE), x=0),
+    )
+    ax = dict(gridcolor=_BORDER, zerolinecolor=_BORDER,
+              tickfont=dict(color=_MUTED, size=9), showgrid=True)
+    fig.update_xaxes(**ax)
+    fig.update_yaxes(**ax)
+    return fig
+
+
+# -- Entry points --------------------------------------------------------------
+
 def render_content(df: pd.DataFrame = None, chart_store: dict = None):
     """Called from within a tab — accepts pre-fetched data or runs its own scan."""
     if df is None or chart_store is None:
@@ -385,4 +685,56 @@ def render_content(df: pd.DataFrame = None, chart_store: dict = None):
 def render(slot):
     """Called as a standalone page."""
     slot.empty()
-    render_content()
+    with slot.container():
+        # Create tabs for Elder and SEPA
+        tab_elder, tab_sepa = st.tabs(["Elder Triple Screen", "SEPA Screener"])
+        
+        with tab_elder:
+            render_elder_tab()
+        
+        with tab_sepa:
+            render_sepa_tab()
+
+
+def render_elder_tab():
+    """Render Elder Triple Screen tab"""
+    cache_key = "_elder_scan_data"
+    if cache_key not in st.session_state:
+        from components.ui import loading_html
+        ph = st.empty()
+        ph.markdown(loading_html("Running Elder Triple Screen scan..."), unsafe_allow_html=True)
+        try:
+            df, chart_store = _run(run_elder_scan())
+            st.session_state[cache_key] = (df, chart_store)
+        except Exception as e:
+            ph.empty()
+            st.error(f"Elder scan failed: {e}")
+            st.code(traceback.format_exc())
+            return
+        ph.empty()
+    else:
+        df, chart_store = st.session_state[cache_key]
+    
+    _render_elder(df, chart_store)
+
+
+def render_sepa_tab():
+    """Render SEPA Screener tab"""
+    cache_key = "_sepa_scan_data"
+    if cache_key not in st.session_state:
+        from components.ui import loading_html
+        ph = st.empty()
+        ph.markdown(loading_html("Running SEPA scan..."), unsafe_allow_html=True)
+        try:
+            df, chart_store = _run(run_sepa_scan())
+            st.session_state[cache_key] = (df, chart_store)
+        except Exception as e:
+            ph.empty()
+            st.error(f"SEPA scan failed: {e}")
+            st.code(traceback.format_exc())
+            return
+        ph.empty()
+    else:
+        df, chart_store = st.session_state[cache_key]
+    
+    _render_sepa(df, chart_store)

@@ -2500,3 +2500,6 @@
 2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:190 - is_breakout values: {True: 2, False: 2}
 2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:191 - Symbols with is_breakout=True: ['PERSISTENT', 'ETERNAL']
 2026-08-21 22:25:24.511 | INFO     | pages.ai_picks:_render_vcp:192 - VCP scores of breakouts: [54.0, 51.8]
+2026-08-21 23:03:17.064 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9670 NSE EQ instruments from Upstox master
+2026-08-21 23:03:19.407 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-21 23:04:10.227 | INFO     | services.elder_scanner:run_elder_scan:436 - Elder scan: 87 setups from 200 stocks
