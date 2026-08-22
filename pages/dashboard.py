@@ -104,7 +104,7 @@ def _build_dashboard_html(quotes, indicators_map) -> str:
     sentiment = 'Bullish' if ratio > 0.6 else 'Bearish' if ratio < 0.4 else 'Neutral'
     sentiment_color = '#00c853' if sentiment == 'Bullish' else '#ef4444' if sentiment == 'Bearish' else '#6b7280'
 
-    return f"""<!DOCTYPE html><html><head>
+    html = f"""<!DOCTYPE html><html><head>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0}}
