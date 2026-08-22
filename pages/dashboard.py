@@ -174,13 +174,6 @@ body{{background:#0b0e17;color:#d1d4dc;font-family:'Inter',system-ui,sans-serif;
 def render(slot):
     slot.empty()
     with slot.container():
-        # Add refresh button
-        col1, col2 = st.columns([6, 1])
-        with col2:
-            if st.button("🔄 Refresh", use_container_width=True):
-                st.cache_data.clear()
-                st.rerun()
-        
         ph = st.empty()
         ph.markdown(loading_html("Loading market data…"), unsafe_allow_html=True)
         
