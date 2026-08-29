@@ -1310,8 +1310,8 @@ def render_backtest_tab():
     
     # Display as styled dataframe
     st.dataframe(
-        display_df.style.applymap(style_status, subset=["Status"])
-                        .applymap(style_achieved, subset=["Achieved"]),
+        display_df.style.map(style_status, subset=["Status"])
+                        .map(style_achieved, subset=["Achieved"]),
         use_container_width=True,
         height=600
     )
