@@ -166,13 +166,40 @@ body{{background:#0b0e17;color:#d1d4dc;padding:12px;}}</style></head><body>
 </body></html>"""
 
 
+def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate Heikin-Ashi candles"""
+    ha_df = df.copy()
+    
+    # HA Close = (Open + High + Low + Close) / 4
+    ha_df['ha_close'] = (df['open'] + df['high'] + df['low'] + df['close']) / 4
+    
+    # HA Open = (Previous HA Open + Previous HA Close) / 2
+    ha_df['ha_open'] = 0.0
+    ha_df.loc[ha_df.index[0], 'ha_open'] = (df.loc[df.index[0], 'open'] + df.loc[df.index[0], 'close']) / 2
+    
+    for i in range(1, len(df)):
+        ha_df.loc[ha_df.index[i], 'ha_open'] = (ha_df.loc[ha_df.index[i-1], 'ha_open'] + ha_df.loc[ha_df.index[i-1], 'ha_close']) / 2
+    
+    # HA High = Max(High, HA Open, HA Close)
+    ha_df['ha_high'] = ha_df[['high', 'ha_open', 'ha_close']].max(axis=1)
+    
+    # HA Low = Min(Low, HA Open, HA Close)
+    ha_df['ha_low'] = ha_df[['low', 'ha_open', 'ha_close']].min(axis=1)
+    
+    return ha_df
+
+
 # -- Elder chart ---------------------------------------------------------------
 
 def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figure:
+    """Elder Triple Screen with Heikin-Ashi (Weekly)"""
     if cdf.empty:
         return go.Figure()
+    
+    # Calculate Heikin-Ashi
+    ha_df = _calculate_heikin_ashi(cdf)
 
-    dates = cdf["datetime"] if "datetime" in cdf.columns else pd.RangeIndex(len(cdf))
+    dates = ha_df["datetime"] if "datetime" in ha_df.columns else pd.RangeIndex(len(ha_df))
     entry = row.get("entry", 0)
     stop  = row.get("stop", 0)
     t1    = row.get("target1", 0)
@@ -184,12 +211,13 @@ def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
         subplot_titles=("", "Force Index 2-EMA", "MACD Histogram"),
     )
 
+    # Use Heikin-Ashi candles
     fig.add_trace(go.Candlestick(
-        x=dates, open=cdf["open"], high=cdf["high"],
-        low=cdf["low"], close=cdf["close"],
+        x=dates, open=ha_df["ha_open"], high=ha_df["ha_high"],
+        low=ha_df["ha_low"], close=ha_df["ha_close"],
         increasing_line_color=_GREEN, increasing_fillcolor="#0d2b1a",
         decreasing_line_color=_RED,   decreasing_fillcolor="#2b0d0d",
-        line_width=1, name="Price",
+        line_width=1, name="Heikin-Ashi",
     ), row=1, col=1)
 
     if "ema13" in cdf.columns:
@@ -232,7 +260,7 @@ def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
         margin=dict(l=0, r=50, t=20, b=0), height=400,
         showlegend=False,
         xaxis_rangeslider_visible=False,
-        title=dict(text=f"{symbol} - Elder Triple Screen",
+        title=dict(text=f"{symbol} - Elder HA Weekly",
                    font=dict(size=11, color=_WHITE), x=0),
     )
     ax = dict(gridcolor=_BORDER, zerolinecolor=_BORDER,
@@ -245,11 +273,14 @@ def _build_elder_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
 # -- SEPA Chart ----------------------------------------------------------------
 
 def _build_sepa_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figure:
-    """Build SEPA (Minervini) chart with SMAs, pivot, and volume"""
+    """Build SEPA (Minervini) Heikin-Ashi chart with SMAs (Weekly)"""
     if cdf.empty:
         return go.Figure()
+    
+    # Calculate Heikin-Ashi
+    ha_df = _calculate_heikin_ashi(cdf)
 
-    dates = cdf["datetime"] if "datetime" in cdf.columns else pd.RangeIndex(len(cdf))
+    dates = ha_df["datetime"] if "datetime" in ha_df.columns else pd.RangeIndex(len(ha_df))
     entry = row.get("entry", 0)
     stop  = row.get("stop", 0)
     t1    = row.get("target1", 0)
@@ -260,15 +291,16 @@ def _build_sepa_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figu
         subplot_titles=("", "Volume"),
     )
 
+    # Use Heikin-Ashi candles
     fig.add_trace(go.Candlestick(
-        x=dates, open=cdf["open"], high=cdf["high"],
-        low=cdf["low"], close=cdf["close"],
+        x=dates, open=ha_df["ha_open"], high=ha_df["ha_high"],
+        low=ha_df["ha_low"], close=ha_df["ha_close"],
         increasing_line_color=_GREEN, increasing_fillcolor="#0d2b1a",
         decreasing_line_color=_RED,   decreasing_fillcolor="#2b0d0d",
-        line_width=1, name="Price",
+        line_width=1, name="Heikin-Ashi",
     ), row=1, col=1)
 
-    # Add SMAs for Minervini's Trend Template
+    # Add SMAs for Minervini's Trend Template (calculated on original close)
     if "close" in cdf.columns:
         sma50 = cdf["close"].rolling(50).mean()
         sma150 = cdf["close"].rolling(150).mean()
@@ -307,7 +339,7 @@ def _build_sepa_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figu
         margin=dict(l=0, r=50, t=20, b=0), height=400,
         showlegend=False,
         xaxis_rangeslider_visible=False,
-        title=dict(text=f"{symbol} - SEPA Analysis",
+        title=dict(text=f"{symbol} - SEPA HA Weekly",
                    font=dict(size=11, color=_WHITE), x=0),
     )
     ax = dict(gridcolor=_BORDER, zerolinecolor=_BORDER,
@@ -320,11 +352,14 @@ def _build_sepa_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figu
 # -- Swing Chart ---------------------------------------------------------------
 
 def _build_swing_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Figure:
-    """Build Master Swing Trader chart with EMAs, RSI, and volume"""
+    """Build Master Swing Trader Heikin-Ashi chart with EMAs, RSI (Weekly)"""
     if cdf.empty:
         return go.Figure()
+    
+    # Calculate Heikin-Ashi
+    ha_df = _calculate_heikin_ashi(cdf)
 
-    dates = cdf["datetime"] if "datetime" in cdf.columns else pd.RangeIndex(len(cdf))
+    dates = ha_df["datetime"] if "datetime" in ha_df.columns else pd.RangeIndex(len(ha_df))
     entry = row.get("entry", 0)
     stop  = row.get("stop", 0)
     t1    = row.get("target1", 0)
@@ -335,15 +370,16 @@ def _build_swing_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
         subplot_titles=("", "RSI", "Volume"),
     )
 
+    # Use Heikin-Ashi candles
     fig.add_trace(go.Candlestick(
-        x=dates, open=cdf["open"], high=cdf["high"],
-        low=cdf["close"], close=cdf["close"],
+        x=dates, open=ha_df["ha_open"], high=ha_df["ha_high"],
+        low=ha_df["ha_low"], close=ha_df["ha_close"],
         increasing_line_color=_GREEN, increasing_fillcolor="#0d2b1a",
         decreasing_line_color=_RED,   decreasing_fillcolor="#2b0d0d",
-        line_width=1, name="Price",
+        line_width=1, name="Heikin-Ashi",
     ), row=1, col=1)
 
-    # Add EMAs for trend alignment
+    # Add EMAs for trend alignment (calculated on original close)
     if "close" in cdf.columns:
         ema10 = cdf["close"].ewm(span=10, adjust=False).mean()
         ema20 = cdf["close"].ewm(span=20, adjust=False).mean()
@@ -369,7 +405,7 @@ def _build_swing_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
                 annotation_font=dict(color=color, size=9),
                 row=1, col=1)
 
-    # RSI
+    # RSI (on original close)
     if "close" in cdf.columns and len(cdf) >= 14:
         delta = cdf["close"].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
@@ -396,7 +432,7 @@ def _build_swing_chart(symbol: str, row: pd.Series, cdf: pd.DataFrame) -> go.Fig
         margin=dict(l=0, r=50, t=20, b=0), height=400,
         showlegend=False,
         xaxis_rangeslider_visible=False,
-        title=dict(text=f"{symbol} - Swing Analysis",
+        title=dict(text=f"{symbol} - Swing HA Weekly",
                    font=dict(size=11, color=_WHITE), x=0),
     )
     ax = dict(gridcolor=_BORDER, zerolinecolor=_BORDER,
@@ -889,11 +925,12 @@ def render(slot):
     """Called as a standalone page."""
     slot.empty()
     with slot.container():
-        # Create tabs for all 3 scanners
-        tab_elder, tab_sepa, tab_swing = st.tabs([
+        # Create tabs for all 4 scanners + backtest
+        tab_elder, tab_sepa, tab_swing, tab_backtest = st.tabs([
             "Elder Triple Screen", 
             "SEPA Screener",
-            "Master Swing Trader"
+            "Master Swing Trader",
+            "📊 Backtest"
         ])
         
         with tab_elder:
@@ -904,6 +941,9 @@ def render(slot):
         
         with tab_swing:
             render_swing_tab()
+        
+        with tab_backtest:
+            render_backtest_tab()
 
 
 def render_elder_tab():
@@ -1193,3 +1233,85 @@ body{{background:#0b0e17;color:#d1d4dc;padding:12px;}}</style></head><body>
 </body></html>"""
     
     return html
+
+
+def render_backtest_tab():
+    """Render Backtest Results tab - Buy Ready signals only"""
+    
+    # Fetch backtest data (last 30 days, all scanners)
+    cache_key = "_backtest_data_30_All"
+    
+    if cache_key not in st.session_state:
+        from components.ui import loading_html
+        from services.backtest import get_backtest_results
+        
+        ph = st.empty()
+        ph.markdown(loading_html("Analyzing historical signals..."), unsafe_allow_html=True)
+        
+        try:
+            results_df = _run(get_backtest_results(days=30, scanner_type=None))
+            st.session_state[cache_key] = results_df
+            ph.empty()
+        except Exception as e:
+            ph.empty()
+            st.error(f"Failed to fetch backtest data: {e}")
+            st.code(traceback.format_exc())
+            return
+    else:
+        results_df = st.session_state[cache_key]
+    
+    if results_df.empty:
+        st.info("No historical signals found. Signals will appear here after running scans.")
+        return
+    
+    # Filter for Buy Ready signals only (BUY NOW, BUY ON BREAKOUT, STRONG BUY, BUY)
+    buy_signals = ["BUY NOW", "BUY ON BREAKOUT", "STRONG BUY", "BUY"]
+    buy_ready_df = results_df[results_df["signal"].isin(buy_signals)]
+    
+    if buy_ready_df.empty:
+        st.info("No Buy Ready signals in the last 30 days.")
+        return
+    
+    # Prepare display dataframe with Strategy column
+    display_df = buy_ready_df[[
+        "signal_date", "scanner_type", "symbol", "entry_price", 
+        "current_price", "target1_price", 
+        "target1_achieved", "achieved_date", "status"
+    ]].copy()
+    
+    display_df.columns = [
+        "Date", "Strategy", "Symbol", "Entry", "CMP", "Target", 
+        "Achieved", "Achieved Date", "Status"
+    ]
+    
+    # Format columns
+    display_df["Entry"] = display_df["Entry"].apply(lambda x: f"₹{x:,.2f}" if x > 0 else "-")
+    display_df["CMP"] = display_df["CMP"].apply(lambda x: f"₹{x:,.2f}" if x > 0 else "-")
+    display_df["Target"] = display_df["Target"].apply(lambda x: f"₹{x:,.2f}" if x > 0 else "-")
+    display_df["Achieved"] = display_df["Achieved"].apply(lambda x: "✅ Yes" if x else "❌ No")
+    display_df["Achieved Date"] = display_df["Achieved Date"].fillna("-")
+    
+    # Apply styling
+    def style_status(val):
+        if "T2 Achieved" in val or "T1 Achieved" in val:
+            return "background-color: #00c85320; color: #00c853; font-weight: 600;"
+        elif "Stop Hit" in val:
+            return "background-color: #ef444420; color: #ef4444; font-weight: 600;"
+        elif "Active" in val:
+            return "background-color: #60a5fa20; color: #60a5fa; font-weight: 600;"
+        return ""
+    
+    def style_achieved(val):
+        if "✅" in val:
+            return "color: #00c853;"
+        elif "❌" in val:
+            return "color: #ef4444;"
+        return ""
+    
+    # Display as styled dataframe
+    st.dataframe(
+        display_df.style.applymap(style_status, subset=["Status"])
+                        .applymap(style_achieved, subset=["Achieved"]),
+        use_container_width=True,
+        height=600
+    )

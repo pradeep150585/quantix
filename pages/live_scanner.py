@@ -7,19 +7,38 @@ import json
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
+import plotly.graph_objects as go
 from services.instruments import get_nifty200_symbols
-from services.market_data import get_quotes, parse_quote
+from services.market_data import get_quotes, parse_quote, get_historical_df
 from config import get as cfg_get
 from components.ui import page_heading, loading_html
 
 _SYMBOLS_KEY = "_live_symbols_df"
+_BG     = "#0b0e17"
+_BORDER = "#1e2433"
+_TEXT   = "#d1d4dc"
+_MUTED  = "#6b7280"
+_GREEN  = "#00c853"
+_RED    = "#ef4444"
+_BLUE   = "#60a5fa"
+
 
 def _run(coro):
     try:
-        loop = asyncio.new_event_loop()
+        import nest_asyncio
+        nest_asyncio.apply()
+    except ImportError:
+        pass
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(coro)
 
 def _ai_signal(tbq_tsq: float, pct_change: float, volume_ratio: float) -> str:
     if tbq_tsq >= 1.5 and pct_change >= 0 and volume_ratio >= 1.0:
@@ -44,6 +63,159 @@ def _signal_style(signal: str) -> tuple[str, str]:
     badge = f'<span style="background:{color}18;color:{color};border:1px solid {color}33;border-radius:2px;padding:1px 4px;font-size:.58rem;font-weight:600;">{label}</span>'
     return bg, badge
 
+
+def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculate Heikin-Ashi candles"""
+    ha_df = df.copy()
+    
+    # HA Close = (Open + High + Low + Close) / 4
+    ha_df['ha_close'] = (df['open'] + df['high'] + df['low'] + df['close']) / 4
+    
+    # HA Open = (Previous HA Open + Previous HA Close) / 2
+    ha_df['ha_open'] = 0.0
+    ha_df.loc[0, 'ha_open'] = (df.loc[0, 'open'] + df.loc[0, 'close']) / 2
+    
+    for i in range(1, len(df)):
+        ha_df.loc[i, 'ha_open'] = (ha_df.loc[i-1, 'ha_open'] + ha_df.loc[i-1, 'ha_close']) / 2
+    
+    # HA High = Max(High, HA Open, HA Close)
+    ha_df['ha_high'] = ha_df[['high', 'ha_open', 'ha_close']].max(axis=1)
+    
+    # HA Low = Min(Low, HA Open, HA Close)
+    ha_df['ha_low'] = ha_df[['low', 'ha_open', 'ha_close']].min(axis=1)
+    
+    return ha_df
+
+
+def _build_heikin_ashi_chart(symbol: str, instrument_key: str) -> go.Figure:
+    """Build Heikin-Ashi chart with EMA 10 and Pivot Points (10-min timeframe)"""
+    try:
+        # Fetch 10-minute data
+        df = _run(get_historical_df(instrument_key, interval="10minute", days=5))
+        
+        if df.empty or len(df) < 20:
+            fig = go.Figure()
+            fig.add_annotation(text="Insufficient data", showarrow=False,
+                             font=dict(size=14, color=_MUTED))
+            fig.update_layout(paper_bgcolor=_BG, plot_bgcolor=_BG, height=400)
+            return fig
+        
+        # Calculate Heikin-Ashi
+        ha_df = _calculate_heikin_ashi(df)
+        
+        # Calculate EMA 10
+        ha_df['ema10'] = ha_df['ha_close'].ewm(span=10, adjust=False).mean()
+        
+        # Calculate Standard Pivot Points (using previous day's data)
+        # Use last complete day for pivot calculation
+        prev_day = df[df['datetime'] < pd.Timestamp.now().normalize()].tail(1)
+        if not prev_day.empty:
+            prev_high = prev_day['high'].iloc[0]
+            prev_low = prev_day['low'].iloc[0]
+            prev_close = prev_day['close'].iloc[0]
+        else:
+            # Fallback to overall high/low/close if no previous day
+            prev_high = df['high'].max()
+            prev_low = df['low'].min()
+            prev_close = df['close'].iloc[-1]
+        
+        # Standard Pivot Points formula
+        pivot = (prev_high + prev_low + prev_close) / 3
+        r1 = (2 * pivot) - prev_low
+        r2 = pivot + (prev_high - prev_low)
+        r3 = prev_high + 2 * (pivot - prev_low)
+        s1 = (2 * pivot) - prev_high
+        s2 = pivot - (prev_high - prev_low)
+        s3 = prev_low - 2 * (prev_high - pivot)
+        
+        dates = ha_df["datetime"] if "datetime" in ha_df.columns else pd.RangeIndex(len(ha_df))
+        
+        fig = go.Figure()
+        
+        # Add Heikin-Ashi candlesticks
+        fig.add_trace(go.Candlestick(
+            x=dates,
+            open=ha_df['ha_open'],
+            high=ha_df['ha_high'],
+            low=ha_df['ha_low'],
+            close=ha_df['ha_close'],
+            increasing_line_color=_GREEN,
+            increasing_fillcolor="#0d2b1a",
+            decreasing_line_color=_RED,
+            decreasing_fillcolor="#2b0d0d",
+            line_width=1,
+            name="Heikin-Ashi",
+        ))
+        
+        # Add EMA 10
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=ha_df['ema10'],
+            line=dict(color=_BLUE, width=1.5),
+            name="EMA 10"
+        ))
+        
+        # Add Pivot Points
+        pivot_levels = [
+            (s3, "#ef4444", "S3", "dash"),
+            (s2, "#f87171", "S2", "dot"),
+            (s1, "#fca5a5", "S1", "dot"),
+            (pivot, "#fbbf24", "Pivot", "solid"),
+            (r1, "#86efac", "R1", "dot"),
+            (r2, "#4ade80", "R2", "dot"),
+            (r3, "#00c853", "R3", "dash"),
+        ]
+        
+        for level, color, name, dash in pivot_levels:
+            fig.add_hline(
+                y=level,
+                line=dict(color=color, width=1, dash=dash),
+                annotation_text=f"{name} {level:.2f}",
+                annotation_position="right",
+                annotation_font=dict(color=color, size=8)
+            )
+        
+        fig.update_layout(
+            paper_bgcolor=_BG,
+            plot_bgcolor=_BG,
+            font=dict(color=_TEXT, size=10, family="Inter"),
+            margin=dict(l=10, r=80, t=30, b=10),
+            height=450,
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                font=dict(size=9)
+            ),
+            xaxis_rangeslider_visible=False,
+            title=dict(
+                text=f"{symbol} - Heikin-Ashi 10-Min with Pivots",
+                font=dict(size=12, color=_TEXT),
+                x=0
+            ),
+        )
+        
+        ax = dict(
+            gridcolor=_BORDER,
+            zerolinecolor=_BORDER,
+            tickfont=dict(color=_MUTED, size=9),
+            showgrid=True
+        )
+        fig.update_xaxes(**ax)
+        fig.update_yaxes(**ax)
+        
+        return fig
+        
+    except Exception as e:
+        fig = go.Figure()
+        fig.add_annotation(text=f"Error: {str(e)}", showarrow=False,
+                         font=dict(size=12, color=_RED))
+        fig.update_layout(paper_bgcolor=_BG, plot_bgcolor=_BG, height=400)
+        return fig
+
 def _build_table_html(df: pd.DataFrame, ts: str, token: str) -> str:
     headers = ["#", "Signal", "Symbol", "CMP", "Chg%", "TBQ/TSQ"]
     th = "".join(
@@ -64,10 +236,11 @@ def _build_table_html(df: pd.DataFrame, ts: str, token: str) -> str:
         pct_c = "#00c853" if pct > 0 else ("#ef4444" if pct < 0 else "#6b7280")
         pct_arr = "▲" if pct > 0 else ("▼" if pct < 0 else "—")
         tbq_tsq_c = "#00c853" if tbq_tsq_v >= 2 else ("#4ade80" if tbq_tsq_v >= 1.2 else ("#ef4444" if tbq_tsq_v <= 0.5 else ("#f87171" if tbq_tsq_v <= 0.8 else "#6b7280")))
+        
         cells = [
             f'<td style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.65rem;color:#4a5568;">{idx+1}</td>',
             f'<td id="r{idx}-signal" style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.65rem;">{badge}</td>',
-            f'<td style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.7rem;color:#fff;font-weight:600;">{symbol}</td>',
+            f'<td style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.7rem;color:#60a5fa;font-weight:600;">{symbol}</td>',
             f'<td id="r{idx}-cmp" style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.7rem;color:#d1d4dc;">₹{row.get("cmp",0):,.0f}</td>',
             f'<td id="r{idx}-pct_change" style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.7rem;color:{pct_c};font-weight:600;">{pct_arr} {abs(pct):.1f}%</td>',
             f'<td id="r{idx}-tbq_tsq" style="padding:6px 4px;border-bottom:1px solid #131722;font-size:.7rem;color:{tbq_tsq_c};font-weight:700;">{tbq_tsq_v:.2f}</td>',
@@ -164,5 +337,8 @@ def render(slot):
             df = df[df["signal"] == "SELL"]
 
         df = df.sort_values("tbq_tsq", ascending=False).reset_index(drop=True)
+        
+        # Display table
         token = cfg_get("upstox.access_token", "")
         components.html(_build_table_html(df, time.strftime("%H:%M:%S"), token), height=450, scrolling=False)
+

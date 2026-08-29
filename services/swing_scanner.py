@@ -17,7 +17,7 @@ Score breakdown (0-100):
 - Momentum/Volume: 15 pts
 - Risk/Reward Setup: 15 pts
 
-Returns: Top 10 stocks
+Returns: Top 5 stocks
 """
 import asyncio
 import numpy as np
@@ -25,9 +25,9 @@ import pandas as pd
 from loguru import logger
 
 from services.instruments import get_nifty200_symbols
-from services.market_data import get_historical_df, bulk_prefetch_today_ohlc
+from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_quotes, parse_quote
 
-_HIST_DAYS = 300
+_HIST_DAYS = 700  # ~100 weeks of data (weekly timeframe)
 _CHART_BARS = 80
 
 
@@ -178,7 +178,7 @@ def _trend_alignment(df: pd.DataFrame) -> tuple[int, dict]:
 
 def _pattern_recognition(df: pd.DataFrame) -> tuple[int, dict]:
     """
-    Farley's pattern cycles:
+    Farley's pattern cycles (adapted for weekly timeframe):
     - Bull/Bear flags
     - Cup and handle
     - Ascending/Descending triangles
@@ -193,59 +193,82 @@ def _pattern_recognition(df: pd.DataFrame) -> tuple[int, dict]:
     low = df["low"]
     
     # Find swing points
-    sh_idx = _swing_highs(high, order=3)
-    sl_idx = _swing_lows(low, order=3)
+    sh_idx = _swing_highs(high, order=2)  # Weekly: less strict order
+    sl_idx = _swing_lows(low, order=2)
     
     if len(sh_idx) < 2 or len(sl_idx) < 2:
         return 0, {"score": 0, "pattern": "Insufficient data"}
     
-    # Check for consolidation (tight range)
-    recent_high = high.tail(20).max()
-    recent_low = low.tail(20).min()
+    # Check for consolidation (tight range) - weekly: last 8-12 weeks
+    recent_bars = min(12, len(df))
+    recent_high = high.tail(recent_bars).max()
+    recent_low = low.tail(recent_bars).min()
     range_pct = ((recent_high - recent_low) / recent_low) * 100
     
-    consolidating = range_pct < 10
+    consolidating = range_pct < 15  # Weekly: slightly wider range acceptable
     
-    # Check for ascending pattern (higher lows)
-    recent_lows = [low.iloc[idx] for idx in sl_idx[-3:]]
-    ascending = all(recent_lows[i] > recent_lows[i-1] for i in range(1, len(recent_lows)))
+    # Check for ascending pattern (higher lows) - need at least 2
+    recent_lows = [low.iloc[idx] for idx in sl_idx[-2:]] if len(sl_idx) >= 2 else []
+    ascending = False
+    if len(recent_lows) >= 2:
+        ascending = recent_lows[-1] > recent_lows[-2]
     
-    # Check for cup and handle (U-shaped recovery)
-    lookback = min(50, len(df))
-    cup_low = low.tail(lookback).min()
-    cup_high = high.tail(lookback).max()
+    # Check for uptrend (price action over last 20 weeks)
+    lookback = min(20, len(df))
+    price_20w_ago = close.iloc[-lookback] if len(df) >= lookback else close.iloc[0]
+    uptrend = close.iloc[-1] > price_20w_ago * 1.05  # Up at least 5% over period
+    
+    # Check for pullback and recovery
+    lookback_short = min(8, len(df))
+    recent_low_price = low.tail(lookback_short).min()
+    recent_high_price = high.tail(lookback_short).max()
     current_price = close.iloc[-1]
     
-    near_highs = current_price > cup_high * 0.90
-    recovered_from_low = (current_price - cup_low) / cup_low > 0.15
+    # Near recent highs after pullback
+    near_highs = current_price > recent_high_price * 0.92
+    had_pullback = (recent_high_price - recent_low_price) / recent_high_price > 0.08
     
-    cup_handle = near_highs and recovered_from_low and consolidating
+    pullback_recovery = near_highs and had_pullback
     
-    # Volume pattern (drying up on pullback)
-    vol_recent = df["volume"].tail(10).mean()
-    vol_avg = df["volume"].tail(50).mean()
-    vol_drying_up = vol_recent < vol_avg * 0.8
+    # Volume pattern (decreasing during consolidation)
+    vol_recent = df["volume"].tail(4).mean()  # Last 4 weeks
+    vol_avg = df["volume"].tail(20).mean()    # 20 week average
+    vol_drying_up = vol_recent < vol_avg * 0.85
+    
+    # Price above key moving average (bullish structure)
+    ema50 = _ema(close, 50)
+    price_above_ema50 = close.iloc[-1] > ema50.iloc[-1] if len(ema50) > 0 else False
     
     # Determine pattern and score
     pattern = "None"
     score = 0
     
-    if cup_handle:
-        pattern = "Cup & Handle"
-        score = 25
-    elif ascending and consolidating:
-        pattern = "Ascending Triangle"
+    # Best setups (score well)
+    if pullback_recovery and uptrend and consolidating:
+        pattern = "Pullback in Uptrend"
+        score = 22
+    elif ascending and consolidating and price_above_ema50:
+        pattern = "Ascending Base"
         score = 20
-    elif ascending:
-        pattern = "Higher Lows"
+    elif uptrend and consolidating:
+        pattern = "Bull Flag"
+        score = 18
+    elif pullback_recovery and uptrend:
+        pattern = "Bounce Setup"
         score = 15
-    elif consolidating:
+    elif ascending and price_above_ema50:
+        pattern = "Higher Lows"
+        score = 12
+    elif consolidating and price_above_ema50:
         pattern = "Consolidation"
         score = 10
+    elif uptrend:
+        pattern = "Uptrend"
+        score = 8
     
-    # Bonus for volume dry-up in consolidation
-    if consolidating and vol_drying_up:
-        score = min(25, score + 5)
+    # Bonus for volume contraction during consolidation
+    if consolidating and vol_drying_up and score > 0:
+        score = min(25, score + 3)
     
     detail = {
         "score": score,
@@ -253,6 +276,7 @@ def _pattern_recognition(df: pd.DataFrame) -> tuple[int, dict]:
         "consolidating": consolidating,
         "range_pct": round(range_pct, 1),
         "ascending": ascending,
+        "uptrend": uptrend,
         "vol_drying_up": vol_drying_up,
     }
     
@@ -338,8 +362,8 @@ def _support_resistance(df: pd.DataFrame) -> tuple[int, dict]:
 
 def _momentum_volume(df: pd.DataFrame) -> tuple[int, dict]:
     """
-    Farley's momentum and volume analysis
-    - RSI (30-70 range ideal)
+    Farley's momentum and volume analysis (adapted for weekly)
+    - RSI (40-70 range ideal for swing longs)
     - Stochastic crossovers
     - Volume trend
     """
@@ -348,44 +372,57 @@ def _momentum_volume(df: pd.DataFrame) -> tuple[int, dict]:
     
     close = df["close"]
     
-    # RSI
+    # RSI - on weekly, look for not overbought but positive
     rsi = _rsi(close, 14).iloc[-1]
-    rsi_bullish = 40 < rsi < 70  # Not overbought, has momentum
+    rsi_bullish = 35 < rsi < 75  # Slightly wider range for weekly
+    rsi_very_bullish = 50 < rsi < 65  # Sweet spot
     
-    # Stochastic
+    # Stochastic - weekly timeframe
     k, d = _stochastic(df, 14)
     k_now = k.iloc[-1]
     d_now = d.iloc[-1]
-    k_prev = k.iloc[-2]
-    d_prev = d.iloc[-2]
+    k_prev = k.iloc[-2] if len(k) > 1 else k_now
+    d_prev = d.iloc[-2] if len(d) > 1 else d_now
     
     stoch_bullish_cross = k_now > d_now and k_prev <= d_prev and k_now < 80
-    stoch_oversold_bounce = k_now > 20 and k_prev <= 20
+    stoch_in_bullish_zone = k_now > 50 and k_now < 80
     
-    # Volume
+    # Volume - weekly
     vol = df["volume"]
-    vol_recent = vol.tail(5).mean()
-    vol_avg = vol.tail(20).mean()
+    vol_recent = vol.tail(4).mean()   # Last 4 weeks
+    vol_avg = vol.tail(20).mean()     # 20 week average
     vol_ratio = vol_recent / vol_avg if vol_avg > 0 else 1.0
     
-    vol_increasing = vol_ratio > 1.2
+    vol_increasing = vol_ratio > 1.1  # 10% above average
+    vol_strong = vol_ratio > 1.3      # 30% above average
     
-    # Price momentum (last 10 bars)
-    price_momentum = ((close.iloc[-1] - close.iloc[-11]) / close.iloc[-11]) * 100 if len(close) >= 11 else 0
-    positive_momentum = price_momentum > 2
+    # Price momentum (last 8 weeks)
+    lookback = min(8, len(close))
+    price_momentum = ((close.iloc[-1] - close.iloc[-lookback]) / close.iloc[-lookback]) * 100
+    positive_momentum = price_momentum > 3  # Up 3%+ in 8 weeks
+    strong_momentum = price_momentum > 8    # Up 8%+ in 8 weeks
     
     # Score
     score = 0
-    if rsi_bullish:
-        score += 5
+    if rsi_very_bullish:
+        score += 6
+    elif rsi_bullish:
+        score += 4
+    
     if stoch_bullish_cross:
-        score += 5
-    elif stoch_oversold_bounce:
-        score += 3
-    if vol_increasing:
-        score += 3
-    if positive_momentum:
+        score += 4
+    elif stoch_in_bullish_zone:
         score += 2
+    
+    if vol_strong:
+        score += 3
+    elif vol_increasing:
+        score += 2
+    
+    if strong_momentum:
+        score += 2
+    elif positive_momentum:
+        score += 1
     
     detail = {
         "score": min(15, score),
@@ -393,7 +430,7 @@ def _momentum_volume(df: pd.DataFrame) -> tuple[int, dict]:
         "stoch_k": round(k_now, 1),
         "stoch_d": round(d_now, 1),
         "vol_ratio": round(vol_ratio, 2),
-        "momentum_10d": round(price_momentum, 1),
+        "momentum_8w": round(price_momentum, 1),
     }
     
     return min(15, score), detail
@@ -418,8 +455,10 @@ def _risk_reward_setup(df: pd.DataFrame, support: float, resistance: float) -> t
     entry = price
     atr = _atr(df, 14).iloc[-1]
     
-    # Stop below support or 2 ATR
-    stop = min(support * 0.98, entry - 2 * atr)
+    # Stop below support with 2% buffer OR 2 ATR below entry (whichever is CLOSER to entry)
+    stop_at_support = support * 0.98
+    stop_at_atr = entry - 2 * atr
+    stop = max(stop_at_support, stop_at_atr)  # BUG FIX: was min(), should be max() to get tighter stop
     
     # Targets based on resistance and ATR
     target1 = min(resistance * 0.98, entry + 3 * atr)
@@ -510,13 +549,16 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         grade = "Good Setup"
     elif total_score >= 50:
         grade = "Watchlist"
+    elif total_score >= 40:
+        grade = "Monitor"
     else:
         grade = "Pass"
     
     # Signal determination
     signal = rr_detail.get("signal", "NO TRADE")
     
-    # Only return stocks with reasonable scores
+    # Return stocks with score 40+ so user can evaluate
+    # Focus on those 50+ for actual trades, but show 40-49 for monitoring
     if total_score < 40:
         return None
     
@@ -568,7 +610,7 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
         ikey = row.get("instrument_key", "")
         
         try:
-            df = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
+            df = await get_historical_df(ikey, interval="week", days=_HIST_DAYS)
             if df.empty or len(df) < 50:
                 return None
             
@@ -588,18 +630,20 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
 async def run_swing_scan() -> tuple[pd.DataFrame, dict]:
     """
     Run Farley Master Swing Trader scan on NIFTY 200
-    Returns: (DataFrame of TOP 10 stocks, metadata dict)
+    Returns: (DataFrame of TOP 5 stocks, metadata dict)
     """
+    from datetime import date
+    from database import save_scanner_signal
+    
     logger.info("Starting Master Swing Trader scan...")
     
     # Get universe
     nifty200 = await get_nifty200_symbols()
     
-    # Prefetch today's prices
+    # Fetch live quotes instead of just today's OHLC
     ikeys = nifty200["instrument_key"].tolist()
-    today_map = await bulk_prefetch_today_ohlc(ikeys)
-    today_count = today_map if isinstance(today_map, int) else len(today_map)
-    logger.info(f"Swing scan: prefetched {today_count} today's candles")
+    live_quotes = await get_quotes(ikeys)
+    logger.info(f"Swing scan: fetched {len(live_quotes)} live quotes")
     
     # Scan stocks concurrently
     sem = asyncio.Semaphore(20)
@@ -617,24 +661,45 @@ async def run_swing_scan() -> tuple[pd.DataFrame, dict]:
     df = pd.DataFrame(valid)
     df = df.sort_values("score", ascending=False).reset_index(drop=True)
     
-    # Return TOP 10 ONLY (Farley-style focus on best setups)
-    top10 = df.head(10)
+    # Return TOP 5 ONLY (Farley-style focus on best setups)
+    top5 = df.head(5)
     
-    logger.info(f"Swing scan: Returning top 10 stocks out of {len(valid)} analyzed")
+    logger.info(f"Swing scan: Returning top 5 stocks out of {len(valid)} analyzed")
     
-    # Fetch chart data for top 10
+    # Fetch chart data for top 5
     chart_store = {}
-    for _, row in top10.iterrows():
+    for _, row in top5.iterrows():
         symbol = row["symbol"]
         ikey = row["instrument_key"]
         try:
-            cdf = await get_historical_df(ikey, interval="day", days=_CHART_BARS)
+            cdf = await get_historical_df(ikey, interval="week", days=_CHART_BARS*7)
             if not cdf.empty:
                 chart_store[symbol] = cdf.tail(_CHART_BARS)
         except Exception as e:
             logger.warning(f"Swing: Could not fetch chart for {symbol}: {e}")
     
-    logger.info(f"Swing scan: Fetched charts for {len(chart_store)}/{len(top10)} stocks")
+    logger.info(f"Swing scan: Fetched charts for {len(chart_store)}/{len(top5)} stocks")
     
-    return top10, chart_store
+    # Save signals to database for backtesting
+    today = str(date.today())
+    for _, row in top5.iterrows():
+        try:
+            save_scanner_signal(
+                signal_date=today,
+                scanner_type="Swing",
+                symbol=row["symbol"],
+                company_name=row.get("company_name", ""),
+                instrument_key=row.get("instrument_key", ""),
+                entry_price=row.get("entry", 0),
+                stop_price=row.get("stop", 0),
+                target1_price=row.get("target1", 0),
+                target2_price=row.get("target2", 0),
+                score=row.get("score", 0),
+                signal=row.get("signal", ""),
+                sector=row.get("sector", "")
+            )
+        except Exception as e:
+            logger.warning(f"Failed to save Swing signal for {row['symbol']}: {e}")
+    
+    return top5, chart_store
 

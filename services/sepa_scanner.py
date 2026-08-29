@@ -10,7 +10,7 @@ Minervini's SEPA Criteria:
 5. Volume Characteristics - 15 pts
 
 Total: 100 pts
-Display: Top 10 stocks only
+Display: Top 5 stocks only
 """
 import asyncio
 import numpy as np
@@ -18,9 +18,9 @@ import pandas as pd
 from loguru import logger
 
 from services.instruments import get_nifty200_symbols
-from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp
+from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp, get_quotes, parse_quote
 
-_HIST_DAYS = 300
+_HIST_DAYS = 700  # ~100 weeks of data (weekly timeframe)
 _CHART_BARS = 80
 
 
@@ -437,6 +437,10 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
     vcp_detected = vcp_detail["vcp_detected"]
     at_pivot = pivot_detail["status"] in ["Breakout", "At Pivot"]
     
+    # Debug log for troubleshooting
+    if total_score >= 50:
+        logger.debug(f"SEPA {symbol}: score={total_score}, trend_passed={trend_passed}/8, vcp={vcp_detected}, at_pivot={at_pivot}, pivot_status={pivot_detail['status']}, vol_score={volume_score}")
+    
     if trend_passed >= 7 and vcp_detected and at_pivot and volume_score >= 10:
         signal = "BUY NOW"
     elif trend_passed >= 6 and vcp_detected and pivot_detail["dist_to_pivot_pct"] >= -10:
@@ -504,7 +508,7 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
         ikey = row.get("instrument_key", "")
         
         try:
-            df = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
+            df = await get_historical_df(ikey, interval="week", days=_HIST_DAYS)
             if df.empty or len(df) < 60:
                 return None
             
@@ -524,18 +528,21 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
 async def run_sepa_scan() -> tuple[pd.DataFrame, dict]:
     """
     Run Minervini SEPA scan on NIFTY 200
-    Returns: (DataFrame of TOP 10 stocks, chart_store dict)
+    Returns: (DataFrame of TOP 5 stocks, chart_store dict)
+    Using weekly timeframe with live prices
     """
+    from datetime import date
+    from database import save_scanner_signal
+    
     logger.info("Starting Minervini SEPA scan...")
     
     # Get universe
     nifty200 = await get_nifty200_symbols()
     
-    # Prefetch today's prices
+    # Fetch live quotes instead of just today's OHLC
     ikeys = nifty200["instrument_key"].tolist()
-    today_map = await bulk_prefetch_today_ohlc(ikeys)
-    today_count = today_map if isinstance(today_map, int) else len(today_map)
-    logger.info(f"SEPA scan: prefetched {today_count} today's candles")
+    live_quotes = await get_quotes(ikeys)
+    logger.info(f"SEPA scan: fetched {len(live_quotes)} live quotes")
     
     # Scan stocks concurrently
     sem = asyncio.Semaphore(20)
@@ -553,23 +560,44 @@ async def run_sepa_scan() -> tuple[pd.DataFrame, dict]:
     df = pd.DataFrame(valid)
     df = df.sort_values("score", ascending=False).reset_index(drop=True)
     
-    # Return TOP 10 ONLY (Minervini-style focus on best setups)
-    top10 = df.head(10)
+    # Return TOP 5 ONLY (Minervini-style focus on best setups)
+    top5 = df.head(5)
     
-    logger.info(f"SEPA scan: Returning top 10 stocks out of {len(valid)} analyzed")
+    logger.info(f"SEPA scan: Returning top 5 stocks out of {len(valid)} analyzed")
     
-    # Fetch chart data for top 10
+    # Fetch chart data for top 5
     chart_store = {}
-    for _, row in top10.iterrows():
+    for _, row in top5.iterrows():
         symbol = row["symbol"]
         ikey = row["instrument_key"]
         try:
-            cdf = await get_historical_df(ikey, interval="day", days=_CHART_BARS)
+            cdf = await get_historical_df(ikey, interval="week", days=_CHART_BARS*7)
             if not cdf.empty:
                 chart_store[symbol] = cdf.tail(_CHART_BARS)
         except Exception as e:
             logger.warning(f"SEPA: Could not fetch chart for {symbol}: {e}")
     
-    logger.info(f"SEPA scan: Fetched charts for {len(chart_store)}/{len(top10)} stocks")
+    logger.info(f"SEPA scan: Fetched charts for {len(chart_store)}/{len(top5)} stocks")
     
-    return top10, chart_store
+    # Save signals to database for backtesting
+    today = str(date.today())
+    for _, row in top5.iterrows():
+        try:
+            save_scanner_signal(
+                signal_date=today,
+                scanner_type="SEPA",
+                symbol=row["symbol"],
+                company_name=row.get("company_name", ""),
+                instrument_key=row.get("instrument_key", ""),
+                entry_price=row.get("entry", 0),
+                stop_price=row.get("stop", 0),
+                target1_price=row.get("target1", 0),
+                target2_price=row.get("target2", 0) if "target2" in row else 0,
+                score=row.get("score", 0),
+                signal=row.get("signal", ""),
+                sector=row.get("sector", "")
+            )
+        except Exception as e:
+            logger.warning(f"Failed to save SEPA signal for {row['symbol']}: {e}")
+    
+    return top5, chart_store

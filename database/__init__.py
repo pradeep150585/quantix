@@ -58,7 +58,29 @@ def init_db():
                 scan_data TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS scanner_signals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                signal_date TEXT NOT NULL,
+                scanner_type TEXT NOT NULL,
+                symbol TEXT NOT NULL,
+                company_name TEXT,
+                instrument_key TEXT,
+                entry_price REAL,
+                stop_price REAL,
+                target1_price REAL,
+                target2_price REAL,
+                score REAL,
+                signal TEXT,
+                sector TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(signal_date, scanner_type, symbol)
+            );
+            CREATE INDEX IF NOT EXISTS idx_scanner_signals_date
+                ON scanner_signals (signal_date DESC);
+            CREATE INDEX IF NOT EXISTS idx_scanner_signals_symbol
+                ON scanner_signals (symbol);
         """)
+
 
 
 # -- Watchlist -----------------------------------------------------------------
@@ -169,3 +191,69 @@ def save_candles(instrument_key: str, interval: str, df: pd.DataFrame):
             "VALUES (?,?,?,?,?,?,?,?)",
             rows
         )
+
+
+# -- Scanner Signals (for backtesting) ----------------------------------------
+
+def save_scanner_signal(signal_date: str, scanner_type: str, symbol: str, 
+                       company_name: str, instrument_key: str, entry_price: float,
+                       stop_price: float, target1_price: float, target2_price: float,
+                       score: float, signal: str, sector: str = ""):
+    """Save a scanner signal for backtesting."""
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                """INSERT OR REPLACE INTO scanner_signals 
+                   (signal_date, scanner_type, symbol, company_name, instrument_key,
+                    entry_price, stop_price, target1_price, target2_price, score, signal, sector)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (signal_date, scanner_type, symbol, company_name, instrument_key,
+                 entry_price, stop_price, target1_price, target2_price, score, signal, sector)
+            )
+    except Exception as e:
+        print(f"Error saving scanner signal: {e}")
+
+
+def get_scanner_signals(days: int = 30, scanner_type: str = None) -> pd.DataFrame:
+    """Get scanner signals from the last N days, optionally filtered by scanner type."""
+    with get_conn() as conn:
+        if scanner_type:
+            query = """
+                SELECT * FROM scanner_signals 
+                WHERE signal_date >= date('now', ?) AND scanner_type = ?
+                ORDER BY signal_date DESC, score DESC
+            """
+            rows = conn.execute(query, (f'-{days} days', scanner_type)).fetchall()
+        else:
+            query = """
+                SELECT * FROM scanner_signals 
+                WHERE signal_date >= date('now', ?)
+                ORDER BY signal_date DESC, score DESC
+            """
+            rows = conn.execute(query, (f'-{days} days',)).fetchall()
+    
+    if not rows:
+        return pd.DataFrame()
+    
+    return pd.DataFrame([dict(r) for r in rows])
+
+
+def get_all_scanner_signals(from_date: str = None) -> pd.DataFrame:
+    """Get all scanner signals, optionally from a specific date."""
+    with get_conn() as conn:
+        if from_date:
+            query = """
+                SELECT * FROM scanner_signals 
+                WHERE signal_date >= ?
+                ORDER BY signal_date DESC, score DESC
+            """
+            rows = conn.execute(query, (from_date,)).fetchall()
+        else:
+            query = "SELECT * FROM scanner_signals ORDER BY signal_date DESC, score DESC"
+            rows = conn.execute(query).fetchall()
+    
+    if not rows:
+        return pd.DataFrame()
+    
+    return pd.DataFrame([dict(r) for r in rows])
+

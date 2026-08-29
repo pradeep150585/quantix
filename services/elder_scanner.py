@@ -24,9 +24,9 @@ import pandas as pd
 from loguru import logger
 
 from services.instruments import get_nifty200_symbols
-from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp
+from services.market_data import get_historical_df, bulk_prefetch_today_ohlc, get_ltp, get_quotes, parse_quote
 
-_HIST_DAYS  = 300
+_HIST_DAYS  = 700  # ~100 weeks of data (weekly timeframe)
 _CHART_BARS = 80
 _MIN_RR     = 1.5
 
@@ -392,7 +392,7 @@ async def _process(row: pd.Series, ltp_map: dict,
         isin   = row.get("isin", "")
         ikey   = row.get("instrument_key", f"NSE_EQ|{isin}")
         try:
-            df       = await get_historical_df(ikey, interval="day", days=_HIST_DAYS)
+            df       = await get_historical_df(ikey, interval="week", days=_HIST_DAYS)
             if df.empty or len(df) < 15:
                 return None
             live_ltp = ltp_map.get(ikey, {}).get("last_price", 0.0)
@@ -406,22 +406,30 @@ async def _process(row: pd.Series, ltp_map: dict,
 async def run_elder_scan() -> tuple[pd.DataFrame, dict]:
     """
     Dr. Alexander Elder's Triple Screen Trading System
-    Returns (top 10 stocks DataFrame, chart_store dict)
+    Returns (top 5 stocks DataFrame, chart_store dict)
     
     Methodology from "Trading for a Living":
     - Screen 1: Market tide (trend-following indicator on weekly)
-    - Screen 2: Wave (oscillator on daily for pullback)
-    - Screen 3: Intraday breakout (entry timing)
+    - Screen 2: Wave (oscillator on weekly for pullback)
+    - Screen 3: Weekly breakout (entry timing)
     
-    We use daily timeframe for all screens (adapted for swing trading)
+    Now using weekly timeframe as per user request
     """
+    from datetime import date
+    from database import save_scanner_signal
+    
     symbols_df = await get_nifty200_symbols()
     if symbols_df.empty:
         return pd.DataFrame(), {}
 
     all_keys = symbols_df["instrument_key"].tolist()
-    await bulk_prefetch_today_ohlc(all_keys)
-    ltp_raw = await get_ltp(all_keys)
+    # Fetch live quotes instead of just LTP
+    live_quotes = await get_quotes(all_keys)
+    ltp_raw = {}
+    for key, quote_data in live_quotes.items():
+        parsed = parse_quote(quote_data)
+        if parsed:
+            ltp_raw[key] = {"last_price": parsed.get("ltp", 0)}
 
     sem     = asyncio.Semaphore(100)
     tasks   = [_process(row, ltp_raw, sem) for _, row in symbols_df.iterrows()]
@@ -440,10 +448,31 @@ async def run_elder_scan() -> tuple[pd.DataFrame, dict]:
 
     df = pd.DataFrame(clean).sort_values("score", ascending=False).reset_index(drop=True)
     
-    # Return TOP 10 ONLY (Elder's focus on quality over quantity)
-    top10 = df.head(10)
-    top10_chart_store = {sym: chart_store[sym] for sym in top10["symbol"].values if sym in chart_store}
+    # Return TOP 5 ONLY (Elder's focus on quality over quantity)
+    top5 = df.head(5)
+    top5_chart_store = {sym: chart_store[sym] for sym in top5["symbol"].values if sym in chart_store}
     
-    logger.info(f"Elder Triple Screen: {len(top10)} top stocks from {len(df)} setups analyzed")
+    # Save signals to database for backtesting
+    today = str(date.today())
+    for _, row in top5.iterrows():
+        try:
+            save_scanner_signal(
+                signal_date=today,
+                scanner_type="Elder",
+                symbol=row["symbol"],
+                company_name=row.get("company_name", ""),
+                instrument_key=row.get("instrument_key", ""),
+                entry_price=row.get("entry", 0),
+                stop_price=row.get("stop", 0),
+                target1_price=row.get("target1", 0),
+                target2_price=row.get("target2", 0),
+                score=row.get("score", 0),
+                signal=row.get("signal", ""),
+                sector=row.get("sector", "")
+            )
+        except Exception as e:
+            logger.warning(f"Failed to save Elder signal for {row['symbol']}: {e}")
     
-    return top10, top10_chart_store
+    logger.info(f"Elder Triple Screen: {len(top5)} top stocks from {len(df)} setups analyzed")
+    
+    return top5, top5_chart_store
