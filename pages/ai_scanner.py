@@ -11,6 +11,7 @@ from plotly.subplots import make_subplots
 from services.elder_scanner import run_elder_scan
 from services.sepa_scanner import run_sepa_scan
 from services.swing_scanner import run_swing_scan
+from services.short_term_scanner import run_short_term_scan
 
 _BG     = "#0b0e17"
 _CARD   = "#131722"
@@ -925,11 +926,12 @@ def render(slot):
     """Called as a standalone page."""
     slot.empty()
     with slot.container():
-        # Create tabs for all 4 scanners + backtest
-        tab_elder, tab_sepa, tab_swing, tab_backtest = st.tabs([
+        # Create tabs for all scanners
+        tab_elder, tab_sepa, tab_swing, tab_short, tab_backtest = st.tabs([
             "Elder Triple Screen", 
             "SEPA Screener",
             "Master Swing Trader",
+            "Short Term",
             "📊 Backtest"
         ])
         
@@ -941,6 +943,9 @@ def render(slot):
         
         with tab_swing:
             render_swing_tab()
+        
+        with tab_short:
+            render_short_term_tab()
         
         with tab_backtest:
             render_backtest_tab()
@@ -1315,3 +1320,85 @@ def render_backtest_tab():
         use_container_width=True,
         height=600
     )
+
+
+def render_short_term_tab():
+    """Render Short Term (HA + Supertrend) tab"""
+    cache_key = "_short_term_scan_data"
+    
+    if cache_key not in st.session_state:
+        from components.ui import loading_html
+        ph = st.empty()
+        ph.markdown(loading_html("Running Short Term scan..."), unsafe_allow_html=True)
+        
+        try:
+            df = _run(run_short_term_scan())
+            st.session_state[cache_key] = df
+            ph.empty()
+        except Exception as e:
+            ph.empty()
+            st.error(f"Short Term scan failed: {e}")
+            st.code(traceback.format_exc())
+            return
+    else:
+        df = st.session_state[cache_key]
+    
+    if df.empty:
+        st.info("No Short Term signals found. The strategy requires specific HA + Supertrend crossover conditions.")
+        return
+    
+    # Display simple table
+    st.markdown(f"### Short Term Signals ({len(df)} stocks)")
+    st.markdown("**Strategy:** Heikin-Ashi + Supertrend(10,2) crossover signals")
+    
+    # Prepare display dataframe
+    display_df = df[[
+        "signal", "symbol", "price", "change_pct", 
+        "entry", "stop", "target", "supertrend"
+    ]].copy()
+    
+    display_df.columns = [
+        "Signal", "Symbol", "CMP", "Chg%", 
+        "Entry", "Stop", "Target", "Supertrend"
+    ]
+    
+    # Format columns
+    display_df["CMP"] = display_df["CMP"].apply(lambda x: f"₹{x:,.2f}")
+    display_df["Chg%"] = display_df["Chg%"].apply(lambda x: f"{x:+.2f}%")
+    display_df["Entry"] = display_df["Entry"].apply(lambda x: f"₹{x:,.2f}")
+    display_df["Stop"] = display_df["Stop"].apply(lambda x: f"₹{x:,.2f}")
+    display_df["Target"] = display_df["Target"].apply(lambda x: f"₹{x:,.2f}")
+    display_df["Supertrend"] = display_df["Supertrend"].apply(lambda x: f"₹{x:,.2f}")
+    
+    # Apply styling
+    def style_signal(val):
+        if val == "BUY":
+            return "background-color: #00c85320; color: #00c853; font-weight: 700;"
+        elif val == "SELL":
+            return "background-color: #ef444420; color: #ef4444; font-weight: 700;"
+        return ""
+    
+    def style_change(val):
+        if "+" in val:
+            return "color: #00c853; font-weight: 600;"
+        elif "-" in val and val != "-":
+            return "color: #ef4444; font-weight: 600;"
+        return ""
+    
+    # Display table
+    st.dataframe(
+        display_df.style.map(style_signal, subset=["Signal"])
+                        .map(style_change, subset=["Chg%"]),
+        use_container_width=True,
+        height=600
+    )
+    
+    # Show summary stats
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+        buy_count = len(df[df["signal"] == "BUY"])
+        st.metric("🟢 BUY Signals", buy_count)
+    with col2:
+        sell_count = len(df[df["signal"] == "SELL"])
+        st.metric("🔴 SELL Signals", sell_count)
