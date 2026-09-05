@@ -108,19 +108,22 @@ def _calculate_supertrend(df: pd.DataFrame, period: int = 10, multiplier: float 
     return supertrend
 
 
-def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> bool:
+def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[bool, dict]:
     """
     Check if buy conditions are met
     
     Buy Conditions:
     1. 1 day ago: HA open < Supertrend
-    2. 1 day ago: HA close > Supertrend
+    2. 1 day ago: HA close > Supertrend (crossover)
     3. Current: HA open > Supertrend
-    4. Current: HA close > HA open
-    5. Current: HA open == HA low
+    4. Current: HA close > HA open (bullish candle)
+    5. Current: HA open == HA low (no lower wick - strong bullish)
+    
+    Returns:
+        tuple: (conditions_met, debug_info)
     """
     if len(ha_df) < 2:
-        return False
+        return False, {}
     
     # Previous day (index -2)
     prev_ha_open = ha_df.iloc[-2]['ha_open']
@@ -133,29 +136,45 @@ def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> bool:
     curr_ha_low = ha_df.iloc[-1]['ha_low']
     curr_supertrend = supertrend.iloc[-1]
     
+    # Calculate tolerance as percentage of price (more realistic)
+    tolerance = curr_ha_open * 0.001  # 0.1% tolerance
+    
     # Check all buy conditions
     cond1 = prev_ha_open < prev_supertrend
     cond2 = prev_ha_close > prev_supertrend
     cond3 = curr_ha_open > curr_supertrend
     cond4 = curr_ha_close > curr_ha_open
-    cond5 = abs(curr_ha_open - curr_ha_low) < 0.01  # Allow small tolerance for equality
+    cond5 = abs(curr_ha_open - curr_ha_low) <= tolerance
     
-    return cond1 and cond2 and cond3 and cond4 and cond5
+    debug_info = {
+        'cond1_prev_open_lt_st': cond1,
+        'cond2_prev_close_gt_st': cond2,
+        'cond3_curr_open_gt_st': cond3,
+        'cond4_bullish_candle': cond4,
+        'cond5_no_lower_wick': cond5,
+        'tolerance': tolerance,
+        'open_low_diff': abs(curr_ha_open - curr_ha_low)
+    }
+    
+    return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
 
 
-def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> bool:
+def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[bool, dict]:
     """
     Check if sell conditions are met
     
     Sell Conditions:
     1. 1 day ago: HA open > Supertrend
-    2. 1 day ago: HA close < Supertrend
+    2. 1 day ago: HA close < Supertrend (crossover)
     3. Current: HA open < Supertrend
-    4. Current: HA close < HA open
-    5. Current: HA open == HA high
+    4. Current: HA close < HA open (bearish candle)
+    5. Current: HA open == HA high (no upper wick - strong bearish)
+    
+    Returns:
+        tuple: (conditions_met, debug_info)
     """
     if len(ha_df) < 2:
-        return False
+        return False, {}
     
     # Previous day (index -2)
     prev_ha_open = ha_df.iloc[-2]['ha_open']
@@ -168,14 +187,27 @@ def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> bool:
     curr_ha_high = ha_df.iloc[-1]['ha_high']
     curr_supertrend = supertrend.iloc[-1]
     
+    # Calculate tolerance as percentage of price (more realistic)
+    tolerance = curr_ha_open * 0.001  # 0.1% tolerance
+    
     # Check all sell conditions
     cond1 = prev_ha_open > prev_supertrend
     cond2 = prev_ha_close < prev_supertrend
     cond3 = curr_ha_open < curr_supertrend
     cond4 = curr_ha_close < curr_ha_open
-    cond5 = abs(curr_ha_open - curr_ha_high) < 0.01  # Allow small tolerance for equality
+    cond5 = abs(curr_ha_open - curr_ha_high) <= tolerance
     
-    return cond1 and cond2 and cond3 and cond4 and cond5
+    debug_info = {
+        'cond1_prev_open_gt_st': cond1,
+        'cond2_prev_close_lt_st': cond2,
+        'cond3_curr_open_lt_st': cond3,
+        'cond4_bearish_candle': cond4,
+        'cond5_no_upper_wick': cond5,
+        'tolerance': tolerance,
+        'open_high_diff': abs(curr_ha_open - curr_ha_high)
+    }
+    
+    return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
 
 
 def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
@@ -195,9 +227,14 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         # Calculate Supertrend (10, 2)
         supertrend = _calculate_supertrend(df, period=10, multiplier=2.0)
         
-        # Check conditions
-        is_buy = _check_buy_conditions(ha_df, supertrend)
-        is_sell = _check_sell_conditions(ha_df, supertrend)
+        # Check conditions with debug info
+        is_buy, buy_debug = _check_buy_conditions(ha_df, supertrend)
+        is_sell, sell_debug = _check_sell_conditions(ha_df, supertrend)
+        
+        # Log first few stocks for debugging
+        if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
+            logger.info(f"{symbol} - BUY debug: {buy_debug}")
+            logger.info(f"{symbol} - SELL debug: {sell_debug}")
         
         if not is_buy and not is_sell:
             return None
