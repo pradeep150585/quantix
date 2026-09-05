@@ -3,17 +3,20 @@ Short Term Scanner - Heikin-Ashi + Supertrend Strategy
 
 Buy Conditions:
 1. 1 day ago: HA open < Supertrend(10,2)
-2. 1 day ago: HA close > Supertrend(10,2)
+2. 1 day ago: HA close > Supertrend(10,2) [bullish crossover]
 3. Current: HA open > Supertrend(10,2)
-4. Current: HA close > HA open
-5. Current: HA open == HA low
+4. Current: HA close > HA open [bullish candle]
+5. Current: Small lower wick (< 20% of candle range)
 
 Sell Conditions:
 1. 1 day ago: HA open > Supertrend(10,2)
-2. 1 day ago: HA close < Supertrend(10,2)
+2. 1 day ago: HA close < Supertrend(10,2) [bearish crossover]
 3. Current: HA open < Supertrend(10,2)
-4. Current: HA close < HA open
-5. Current: HA open == HA high
+4. Current: HA close < HA open [bearish candle]
+5. Current: Small upper wick (< 20% of candle range)
+
+Note: Condition 5 relaxed from "HA open == HA low/high" to "small wick < 20%"
+      for daily timeframes where exact equality is too strict.
 """
 import asyncio
 import pandas as pd
@@ -117,7 +120,7 @@ def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[b
     2. 1 day ago: HA close > Supertrend (crossover)
     3. Current: HA open > Supertrend
     4. Current: HA close > HA open (bullish candle)
-    5. Current: HA open == HA low (no lower wick - strong bullish)
+    5. Current: HA open close to HA low (small lower wick - relaxed for daily)
     
     Returns:
         tuple: (conditions_met, debug_info)
@@ -134,26 +137,31 @@ def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[b
     curr_ha_open = ha_df.iloc[-1]['ha_open']
     curr_ha_close = ha_df.iloc[-1]['ha_close']
     curr_ha_low = ha_df.iloc[-1]['ha_low']
+    curr_ha_high = ha_df.iloc[-1]['ha_high']
     curr_supertrend = supertrend.iloc[-1]
     
-    # Calculate tolerance as percentage of price (more realistic)
-    tolerance = curr_ha_open * 0.001  # 0.1% tolerance
+    # Calculate candle range and lower wick size
+    candle_range = curr_ha_high - curr_ha_low
+    lower_wick = curr_ha_open - curr_ha_low
+    lower_wick_pct = (lower_wick / candle_range * 100) if candle_range > 0 else 0
     
     # Check all buy conditions
     cond1 = prev_ha_open < prev_supertrend
     cond2 = prev_ha_close > prev_supertrend
     cond3 = curr_ha_open > curr_supertrend
     cond4 = curr_ha_close > curr_ha_open
-    cond5 = abs(curr_ha_open - curr_ha_low) <= tolerance
+    # Relaxed: lower wick should be < 20% of candle range (small wick acceptable)
+    cond5 = lower_wick_pct < 20
     
     debug_info = {
         'cond1_prev_open_lt_st': cond1,
         'cond2_prev_close_gt_st': cond2,
         'cond3_curr_open_gt_st': cond3,
         'cond4_bullish_candle': cond4,
-        'cond5_no_lower_wick': cond5,
-        'tolerance': tolerance,
-        'open_low_diff': abs(curr_ha_open - curr_ha_low)
+        'cond5_small_lower_wick': cond5,
+        'lower_wick': round(lower_wick, 2),
+        'lower_wick_pct': round(lower_wick_pct, 2),
+        'candle_range': round(candle_range, 2)
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
@@ -168,7 +176,7 @@ def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[
     2. 1 day ago: HA close < Supertrend (crossover)
     3. Current: HA open < Supertrend
     4. Current: HA close < HA open (bearish candle)
-    5. Current: HA open == HA high (no upper wick - strong bearish)
+    5. Current: HA open close to HA high (small upper wick - relaxed for daily)
     
     Returns:
         tuple: (conditions_met, debug_info)
@@ -185,26 +193,31 @@ def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[
     curr_ha_open = ha_df.iloc[-1]['ha_open']
     curr_ha_close = ha_df.iloc[-1]['ha_close']
     curr_ha_high = ha_df.iloc[-1]['ha_high']
+    curr_ha_low = ha_df.iloc[-1]['ha_low']
     curr_supertrend = supertrend.iloc[-1]
     
-    # Calculate tolerance as percentage of price (more realistic)
-    tolerance = curr_ha_open * 0.001  # 0.1% tolerance
+    # Calculate candle range and upper wick size
+    candle_range = curr_ha_high - curr_ha_low
+    upper_wick = curr_ha_high - curr_ha_open
+    upper_wick_pct = (upper_wick / candle_range * 100) if candle_range > 0 else 0
     
     # Check all sell conditions
     cond1 = prev_ha_open > prev_supertrend
     cond2 = prev_ha_close < prev_supertrend
     cond3 = curr_ha_open < curr_supertrend
     cond4 = curr_ha_close < curr_ha_open
-    cond5 = abs(curr_ha_open - curr_ha_high) <= tolerance
+    # Relaxed: upper wick should be < 20% of candle range (small wick acceptable)
+    cond5 = upper_wick_pct < 20
     
     debug_info = {
         'cond1_prev_open_gt_st': cond1,
         'cond2_prev_close_lt_st': cond2,
         'cond3_curr_open_lt_st': cond3,
         'cond4_bearish_candle': cond4,
-        'cond5_no_upper_wick': cond5,
-        'tolerance': tolerance,
-        'open_high_diff': abs(curr_ha_open - curr_ha_high)
+        'cond5_small_upper_wick': cond5,
+        'upper_wick': round(upper_wick, 2),
+        'upper_wick_pct': round(upper_wick_pct, 2),
+        'candle_range': round(candle_range, 2)
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
