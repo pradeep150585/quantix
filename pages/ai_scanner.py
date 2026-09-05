@@ -1314,12 +1314,22 @@ def render_backtest_tab():
         return ""
     
     # Display as styled dataframe
-    st.dataframe(
-        display_df.style.map(style_status, subset=["Status"])
-                        .map(style_achieved, subset=["Achieved"]),
-        use_container_width=True,
-        height=600
-    )
+    try:
+        # Try new pandas API (2.1+)
+        st.dataframe(
+            display_df.style.map(style_status, subset=["Status"])
+                            .map(style_achieved, subset=["Achieved"]),
+            use_container_width=True,
+            height=600
+        )
+    except AttributeError:
+        # Fall back to old pandas API
+        st.dataframe(
+            display_df.style.applymap(style_status, subset=["Status"])
+                            .applymap(style_achieved, subset=["Achieved"]),
+            use_container_width=True,
+            height=600
+        )
 
 
 def render_short_term_tab():
@@ -1386,12 +1396,22 @@ def render_short_term_tab():
         return ""
     
     # Display table
-    st.dataframe(
-        display_df.style.map(style_signal, subset=["Signal"])
-                        .map(style_change, subset=["Chg%"]),
-        use_container_width=True,
-        height=600
-    )
+    try:
+        # Try new pandas API (2.1+)
+        st.dataframe(
+            display_df.style.map(style_signal, subset=["Signal"])
+                            .map(style_change, subset=["Chg%"]),
+            use_container_width=True,
+            height=600
+        )
+    except AttributeError:
+        # Fall back to old pandas API
+        st.dataframe(
+            display_df.style.applymap(style_signal, subset=["Signal"])
+                            .applymap(style_change, subset=["Chg%"]),
+            use_container_width=True,
+            height=600
+        )
     
     # Show summary stats
     st.markdown("---")
