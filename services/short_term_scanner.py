@@ -1,30 +1,19 @@
 """
-Intraday Scanner - 10-minute Heikin-Ashi + EMA Strategy
+Intraday Scanner - Heikin-Ashi Reversal Strategy
+
+New Logic:
+- Past 3 HA candles are red (bearish)
+- Previous candle is green (bullish reversal)
+- Current candle has no wick (or minimal wick) and crossed above previous candle close
 
 Works in two modes:
-1. Market Hours: Uses live 1-minute data aggregated to 10-minute (starts after 2 candles = 9:35 AM)
+1. Market Hours: Uses live 1-minute data aggregated to 10-minute
 2. Market Closed: Uses historical 1-minute data from last trading day, aggregated to 10-minute
-
-Both modes use the EXACT same 10-minute candle structure for accurate signals.
-
-Sell Conditions:
-1. Previous 10-min candle: HA open > 10-min EMA of HA close
-2. Previous 10-min candle: HA close < 10-min EMA of HA close
-3. Current 10-min candle: HA close < HA open (bearish)
-4. Current 10-min candle: HA close < Previous HA close
-5. Current 10-min candle: HA open = HA high (no upper wick)
-
-Buy Conditions (reverse of sell):
-1. Previous 10-min candle: HA open < 10-min EMA of HA close
-2. Previous 10-min candle: HA close > 10-min EMA of HA close
-3. Current 10-min candle: HA close > HA open (bullish)
-4. Current 10-min candle: HA close > Previous HA close
-5. Current 10-min candle: HA open = HA low (no lower wick)
 """
 import asyncio
 import pandas as pd
 import numpy as np
-from datetime import datetime, time as dt_time
+from datetime import datetime, time as dt_time, timedelta
 from loguru import logger
 
 from services.instruments import get_nifty200_symbols
@@ -110,173 +99,123 @@ def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
     return ha_df
 
 
-def _calculate_ema_ha_close(ha_df: pd.DataFrame, period: int = 10) -> pd.Series:
-    """
-    Calculate EMA of Heikin-Ashi close values
-    
-    Args:
-        ha_df: DataFrame with Heikin-Ashi OHLC data
-        period: EMA period (default 10)
-    
-    Returns:
-        Series with EMA values
-    """
-    return ha_df['ha_close'].ewm(span=period, adjust=False).mean()
+def _is_red_candle(ha_open: float, ha_close: float) -> bool:
+    """Check if HA candle is red (bearish)"""
+    return ha_close < ha_open
 
 
-def _check_buy_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple[bool, dict]:
+def _is_green_candle(ha_open: float, ha_close: float) -> bool:
+    """Check if HA candle is green (bullish)"""
+    return ha_close > ha_open
+
+
+def _has_no_wick(ha_open: float, ha_low: float, tolerance: float = 0.01) -> bool:
     """
-    Check if buy conditions are met (REVERSE OF SELL for Chartink compatibility)
-    
-    Buy Conditions:
-    1. Previous [-1]: HA open < EMA of HA close
-    2. Previous [-1]: HA close > EMA of HA close (crossover)
-    3. Current [0]: HA close > HA open (bullish candle)
-    4. Current [0]: HA close > Previous HA close
-    5. Current [0]: HA open = HA low (exact or very close)
+    Check if candle has no lower wick (or minimal wick)
+    For a bullish candle, HA open should be at or very close to HA low
+    """
+    return abs(ha_open - ha_low) <= tolerance
+
+
+def _check_reversal_conditions(ha_df: pd.DataFrame) -> tuple[bool, dict]:
+    """
+    Check if reversal conditions are met:
+    1. Past 3 HA candles [-4, -3, -2] are red (bearish)
+    2. Previous candle [-1] is green (bullish reversal)
+    3. Current candle [0] is green
+    4. Current candle has no lower wick (HA open = HA low)
+    5. Current candle crossed above previous candle close
     
     Returns:
         tuple: (conditions_met, debug_info)
     """
-    if len(ha_df) < 2:
-        return False, {}
+    if len(ha_df) < 5:  # Need at least 5 candles
+        return False, {"error": "Not enough candles"}
     
-    # Previous candle [-1] (index -2)
-    prev_ha_open = ha_df.iloc[-2]['ha_open']
-    prev_ha_close = ha_df.iloc[-2]['ha_close']
-    prev_ema = ema_ha_close.iloc[-2]
+    # Get last 5 candles (index -5 to -1)
+    candles = []
+    for i in range(-5, 0):
+        candles.append({
+            'open': ha_df.iloc[i]['ha_open'],
+            'close': ha_df.iloc[i]['ha_close'],
+            'high': ha_df.iloc[i]['ha_high'],
+            'low': ha_df.iloc[i]['ha_low'],
+        })
     
-    # Current candle [0] (index -1)
-    curr_ha_open = ha_df.iloc[-1]['ha_open']
-    curr_ha_close = ha_df.iloc[-1]['ha_close']
-    curr_ha_low = ha_df.iloc[-1]['ha_low']
-    curr_ha_high = ha_df.iloc[-1]['ha_high']
-    curr_ema = ema_ha_close.iloc[-1]
+    # Check conditions
+    # Past 3 candles [-5, -4, -3] are red
+    cond1_red1 = _is_red_candle(candles[0]['open'], candles[0]['close'])
+    cond1_red2 = _is_red_candle(candles[1]['open'], candles[1]['close'])
+    cond1_red3 = _is_red_candle(candles[2]['open'], candles[2]['close'])
+    cond1 = cond1_red1 and cond1_red2 and cond1_red3
     
-    # Check all buy conditions
-    cond1 = prev_ha_open < prev_ema
-    cond2 = prev_ha_close > prev_ema
-    cond3 = curr_ha_close > curr_ha_open
-    cond4 = curr_ha_close > prev_ha_close
+    # Previous candle [-2] (index 3) is green
+    cond2 = _is_green_candle(candles[3]['open'], candles[3]['close'])
     
-    # Condition 5: HA open = HA low (exact match in Chartink)
-    # Use very small tolerance (0.01 rupee) for floating point comparison
-    cond5 = abs(curr_ha_open - curr_ha_low) <= 0.01
+    # Current candle [-1] (index 4) is green
+    cond3 = _is_green_candle(candles[4]['open'], candles[4]['close'])
+    
+    # Current candle has no lower wick
+    cond4 = _has_no_wick(candles[4]['open'], candles[4]['low'], tolerance=0.01)
+    
+    # Current candle crossed above previous candle close
+    cond5 = candles[4]['close'] > candles[3]['close']
     
     debug_info = {
-        'cond1': cond1,
-        'cond2': cond2,
-        'cond3': cond3,
-        'cond4': cond4,
-        'cond5': cond5,
-        'prev_open': round(prev_ha_open, 2),
-        'prev_close': round(prev_ha_close, 2),
-        'prev_ema': round(prev_ema, 2),
-        'curr_open': round(curr_ha_open, 2),
-        'curr_close': round(curr_ha_close, 2),
-        'curr_low': round(curr_ha_low, 2),
-        'curr_high': round(curr_ha_high, 2),
-        'open_low_diff': round(abs(curr_ha_open - curr_ha_low), 4)
+        'cond1_3_red_candles': cond1,
+        'cond2_prev_green': cond2,
+        'cond3_curr_green': cond3,
+        'cond4_no_wick': cond4,
+        'cond5_crossed_above': cond5,
+        'candle_-5': f"{'RED' if cond1_red1 else 'GREEN'} O:{candles[0]['open']:.2f} C:{candles[0]['close']:.2f}",
+        'candle_-4': f"{'RED' if cond1_red2 else 'GREEN'} O:{candles[1]['open']:.2f} C:{candles[1]['close']:.2f}",
+        'candle_-3': f"{'RED' if cond1_red3 else 'GREEN'} O:{candles[2]['open']:.2f} C:{candles[2]['close']:.2f}",
+        'candle_-2_prev': f"{'GREEN' if cond2 else 'RED'} O:{candles[3]['open']:.2f} C:{candles[3]['close']:.2f}",
+        'candle_-1_curr': f"{'GREEN' if cond3 else 'RED'} O:{candles[4]['open']:.2f} C:{candles[4]['close']:.2f} L:{candles[4]['low']:.2f}",
+        'wick_diff': round(abs(candles[4]['open'] - candles[4]['low']), 4),
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
 
 
-def _check_sell_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple[bool, dict]:
-    """
-    Check if sell conditions are met (MATCHES CHARTINK CONDITION EXACTLY)
+async def _get_quote_data(instrument_key: str) -> dict:
+    """Get current quote data for TBQ and TSQ"""
+    try:
+        quotes = await get_quotes([instrument_key])
+        if quotes and len(quotes) > 0:
+            quote = parse_quote(quotes[0])
+            return {
+                'tbq': quote.get('total_buy_quantity', 0),
+                'tsq': quote.get('total_sell_quantity', 0),
+            }
+    except Exception as e:
+        logger.debug(f"Could not fetch quote data: {e}")
     
-    Sell Conditions (from Chartink):
-    1. Previous [-1]: HA open > EMA of HA close
-    2. Previous [-1]: HA close < EMA of HA close (crossover)
-    3. Current [0]: HA close < HA open (bearish candle)
-    4. Current [0]: HA close < Previous HA close
-    5. Current [0]: HA open = HA high (exact or very close)
-    
-    Returns:
-        tuple: (conditions_met, debug_info)
-    """
-    if len(ha_df) < 2:
-        return False, {}
-    
-    # Previous candle [-1] (index -2)
-    prev_ha_open = ha_df.iloc[-2]['ha_open']
-    prev_ha_close = ha_df.iloc[-2]['ha_close']
-    prev_ema = ema_ha_close.iloc[-2]
-    
-    # Current candle [0] (index -1)
-    curr_ha_open = ha_df.iloc[-1]['ha_open']
-    curr_ha_close = ha_df.iloc[-1]['ha_close']
-    curr_ha_high = ha_df.iloc[-1]['ha_high']
-    curr_ha_low = ha_df.iloc[-1]['ha_low']
-    curr_ema = ema_ha_close.iloc[-1]
-    
-    # Check all sell conditions
-    cond1 = prev_ha_open > prev_ema
-    cond2 = prev_ha_close < prev_ema
-    cond3 = curr_ha_close < curr_ha_open
-    cond4 = curr_ha_close < prev_ha_close
-    
-    # Condition 5: HA open = HA high (exact match in Chartink)
-    # Use very small tolerance (0.01 rupee) for floating point comparison
-    cond5 = abs(curr_ha_open - curr_ha_high) <= 0.01
-    
-    debug_info = {
-        'cond1': cond1,
-        'cond2': cond2,
-        'cond3': cond3,
-        'cond4': cond4,
-        'cond5': cond5,
-        'prev_open': round(prev_ha_open, 2),
-        'prev_close': round(prev_ha_close, 2),
-        'prev_ema': round(prev_ema, 2),
-        'curr_open': round(curr_ha_open, 2),
-        'curr_close': round(curr_ha_close, 2),
-        'curr_high': round(curr_ha_high, 2),
-        'curr_low': round(curr_ha_low, 2),
-        'open_high_diff': round(abs(curr_ha_open - curr_ha_high), 4)
-    }
-    
-    return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
+    return {'tbq': 0, 'tsq': 0}
 
 
 def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
-                   sector: str, instrument_key: str) -> dict | None:
+                   sector: str, instrument_key: str, quote_data: dict) -> dict | None:
     """
-    Analyze stock for Intraday strategy (10-min HA + EMA)
+    Analyze stock for Intraday reversal strategy
     
     Returns signal dict if conditions are met, None otherwise
     """
-    if df.empty or len(df) < 20:
+    if df.empty or len(df) < 5:  # Need at least 5 candles
         return None
     
     try:
         # Calculate Heikin-Ashi
         ha_df = _calculate_heikin_ashi(df)
         
-        # Calculate 10-period EMA of HA close
-        ema_ha_close = _calculate_ema_ha_close(ha_df, period=10)
+        # Check reversal conditions
+        is_signal, debug = _check_reversal_conditions(ha_df)
         
-        # Check conditions with debug info
-        is_buy, buy_debug = _check_buy_conditions(ha_df, ema_ha_close)
-        is_sell, sell_debug = _check_sell_conditions(ha_df, ema_ha_close)
+        if is_signal:
+            logger.info(f"✅ {symbol} - BUY SIGNAL FOUND!")
+            logger.info(f"   Debug: {debug}")
         
-        # Enhanced logging for ALL stocks to see what's happening
-        if is_sell or is_buy:
-            logger.info(f"✅ {symbol} - SIGNAL FOUND!")
-            logger.info(f"   BUY: {is_buy} | SELL: {is_sell}")
-            if is_sell:
-                logger.info(f"   SELL Debug: {sell_debug}")
-            if is_buy:
-                logger.info(f"   BUY Debug: {buy_debug}")
-        
-        # Log failures for first 5 stocks to debug
-        if not is_buy and not is_sell and symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
-            logger.info(f"❌ {symbol} - No signal")
-            logger.info(f"   SELL conditions: {sell_debug}")
-            logger.info(f"   BUY conditions: {buy_debug}")
-        
-        if not is_buy and not is_sell:
+        if not is_signal:
             return None
         
         # Get current price and market data
@@ -284,22 +223,26 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         prev_close = df.iloc[-2]['close'] if len(df) > 1 else current_price
         pct_change = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
         
-        # Determine signal
-        signal = "BUY" if is_buy else "SELL"
+        # Calculate TBQ/TSQ ratio
+        tbq = quote_data.get('tbq', 0)
+        tsq = quote_data.get('tsq', 0)
+        tbq_tsq_ratio = (tbq / tsq) if tsq > 0 else 0
         
         return {
             "symbol": symbol,
             "company_name": company_name,
             "sector": sector,
             "instrument_key": instrument_key,
-            "signal": signal,
+            "signal": "BUY",  # Only BUY signals for reversal
             "price": round(current_price, 2),
             "change_pct": round(pct_change, 2),
-            "ema_ha_close": round(ema_ha_close.iloc[-1], 2),
             "ha_open": round(ha_df.iloc[-1]['ha_open'], 2),
             "ha_close": round(ha_df.iloc[-1]['ha_close'], 2),
             "ha_high": round(ha_df.iloc[-1]['ha_high'], 2),
             "ha_low": round(ha_df.iloc[-1]['ha_low'], 2),
+            "tbq": tbq,
+            "tsq": tsq,
+            "tbq_tsq_ratio": round(tbq_tsq_ratio, 2),
         }
         
     except Exception as e:
@@ -322,29 +265,21 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore, is_market_open:
                 
                 df_1min = await get_intraday_df(ikey, interval="1minute")
                 
-                if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
-                    logger.info(f"{symbol}: Got {len(df_1min)} 1-minute candles (LIVE)")
-                
                 if df_1min.empty:
                     return None
                 
                 # Aggregate to 10-minute
                 df = _aggregate_to_10min(df_1min)
                 
-                if symbol in ['RELIANCE', 'TCS', 'INFY']:
-                    logger.info(f"{symbol}: Aggregated to {len(df)} 10-minute candles")
-                
-                # Need at least 2 candles (20 minutes) to start showing signals
-                if len(df) < 2:
+                # Need at least 5 candles (50 minutes) to check pattern
+                if len(df) < 5:
                     return None
                     
             else:
                 # Market is closed: Use 1-minute historical data from last completed day
-                # and aggregate to 10-minute (same as Chartink does)
-                from datetime import timedelta
                 from api.upstox_client import get_client
                 
-                # Get last trading day (try yesterday first, then go back up to 5 days to skip weekends/holidays)
+                # Get last trading day (try yesterday first, then go back up to 5 days)
                 today = datetime.now()
                 client = get_client()
                 df_1min = pd.DataFrame()
@@ -379,13 +314,8 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore, is_market_open:
                                 for col in ["open", "high", "low", "close", "volume"]:
                                     df_1min[col] = pd.to_numeric(df_1min[col], errors="coerce")
                                 
-                                if symbol in ['RELIANCE', 'TCS', 'INFY', 'GAIL', 'ADANIGREEN']:
-                                    logger.info(f"{symbol}: Got {len(df_1min)} 1-minute historical candles for {test_date_str} (EOD mode)")
-                                
                                 break  # Found data, stop searching
                     except Exception as e:
-                        if symbol in ['RELIANCE', 'TCS']:
-                            logger.debug(f"{symbol}: No data for {test_date_str}: {e}")
                         continue
                 
                 if df_1min.empty:
@@ -394,19 +324,20 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore, is_market_open:
                 # Aggregate to 10-minute (same as live mode)
                 df = _aggregate_to_10min(df_1min)
                 
-                if symbol in ['RELIANCE', 'TCS', 'INFY', 'GAIL', 'ADANIGREEN']:
-                    logger.info(f"{symbol}: Aggregated to {len(df)} 10-minute candles (EOD mode)")
-                
-                # Need at least 20 candles for EMA calculation
-                if df.empty or len(df) < 20:
+                # Need at least 5 candles
+                if df.empty or len(df) < 5:
                     return None
+            
+            # Get quote data for TBQ/TSQ (only works in live mode)
+            quote_data = await _get_quote_data(ikey) if is_market_open else {'tbq': 0, 'tsq': 0}
             
             # Analyze with same logic regardless of data source
             result = _analyse_stock(
                 df, symbol,
                 row.get("company_name", symbol),
                 row.get("sector", ""),
-                ikey
+                ikey,
+                quote_data
             )
             
             return result
@@ -420,19 +351,19 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore, is_market_open:
 
 async def run_short_term_scan() -> pd.DataFrame:
     """
-    Run Intraday 10-min HA + EMA scan on NIFTY 200
+    Run Intraday HA reversal scan on NIFTY 200
     
     Modes:
     - Market Open (9:15 AM - 3:30 PM): Uses live 1-min data aggregated to 10-min
-    - Market Closed: Uses EOD daily data for analysis/backtesting
+    - Market Closed: Uses historical 1-min data from last trading day
     
-    Returns: DataFrame with BUY and SELL signals
+    Returns: DataFrame with BUY signals only
     """
     # Check if market is open
     is_market_open = _is_market_open()
     mode = "LIVE" if is_market_open else "EOD"
     
-    logger.info(f"Starting Intraday scan in {mode} mode...")
+    logger.info(f"Starting Intraday reversal scan in {mode} mode...")
     
     # Get universe
     nifty200 = await get_nifty200_symbols()
@@ -444,7 +375,7 @@ async def run_short_term_scan() -> pd.DataFrame:
     
     # Filter valid results
     valid = [r for r in results if r is not None]
-    logger.info(f"Intraday scan ({mode}): {len(valid)} signals found")
+    logger.info(f"Intraday reversal scan ({mode}): {len(valid)} BUY signals found")
     
     if not valid:
         return pd.DataFrame()
@@ -452,11 +383,10 @@ async def run_short_term_scan() -> pd.DataFrame:
     # Create DataFrame
     df = pd.DataFrame(valid)
     
-    # Sort: BUY signals first, then by symbol
-    df['signal_order'] = df['signal'].map({'BUY': 0, 'SELL': 1})
-    df = df.sort_values(['signal_order', 'symbol']).reset_index(drop=True)
-    df = df.drop('signal_order', axis=1)
-    
-    logger.info(f"Intraday scan ({mode}): {len(df[df['signal']=='BUY'])} BUY, {len(df[df['signal']=='SELL'])} SELL signals")
+    # Sort by TBQ/TSQ ratio (highest first) if live mode, otherwise by symbol
+    if is_market_open and 'tbq_tsq_ratio' in df.columns:
+        df = df.sort_values('tbq_tsq_ratio', ascending=False).reset_index(drop=True)
+    else:
+        df = df.sort_values('symbol').reset_index(drop=True)
     
     return df

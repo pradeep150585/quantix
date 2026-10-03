@@ -1239,13 +1239,13 @@ body{{background:#0b0e17;color:#d1d4dc;padding:12px;}}</style></head><body>
 
 
 def render_intraday_tab():
-    """Render Intraday (10-min HA + EMA) tab"""
+    """Render Intraday HA Reversal tab"""
     cache_key = "_intraday_scan_data"
     
     if cache_key not in st.session_state:
         from components.ui import loading_html
         ph = st.empty()
-        ph.markdown(loading_html("Running Intraday scan..."), unsafe_allow_html=True)
+        ph.markdown(loading_html("Running Intraday reversal scan..."), unsafe_allow_html=True)
         
         try:
             df = _run(run_short_term_scan())
@@ -1260,51 +1260,65 @@ def render_intraday_tab():
         df = st.session_state[cache_key]
     
     if df.empty:
-        st.info("No Intraday signals found. The strategy requires specific 10-min HA + EMA crossover conditions.")
+        st.info("No Intraday signals found. Strategy: Past 3 red HA candles → Previous green → Current green with no wick + crosses above previous close.")
         return
     
     # Check if market is open to show appropriate message
     from services.short_term_scanner import _is_market_open
     is_market_open = _is_market_open()
-    mode = "LIVE (Intraday)" if is_market_open else "EOD (Daily Data)"
+    mode = "LIVE (10-minute)" if is_market_open else "EOD (Historical 10-minute)"
+    
+    # Display metrics
+    st.markdown(f"### 🔄 Intraday Reversal Signals ({len(df)} stocks) - Mode: {mode}")
+    st.markdown("**Strategy:** 3 Red Candles → Green Reversal → Current Green (No Wick) + Above Previous Close")
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Signals", len(df))
+    
+    if is_market_open and 'tbq_tsq_ratio' in df.columns:
+        avg_ratio = df['tbq_tsq_ratio'].mean()
+        col2.metric("Avg TBQ/TSQ", f"{avg_ratio:.2f}")
+        high_demand = len(df[df['tbq_tsq_ratio'] > 1.5])
+        col3.metric("High Demand (>1.5)", high_demand)
+    
+    st.markdown("---")
     
     # Display table
-    st.markdown(f"### Intraday Signals ({len(df)} stocks) - Mode: {mode}")
-    st.markdown("**Strategy:** 10-min Heikin-Ashi + EMA crossover signals")
-    
     if not is_market_open:
         st.warning("""
-        ⚠️ **Market is closed** - Showing analysis based on EOD (End of Day) data.
-        
-        **Note:** EOD signals may differ from Chartink's live intraday signals because:
-        - Chartink shows **live 10-minute candles** from today's trading session
-        - Our EOD mode uses **daily candles** from previous trading day
-        - Different timeframes = different signals
-        
-        **For matching Chartink results:** Run this scanner during market hours (Mon-Fri, 9:35 AM onwards) 
-        when both will analyze the same live 10-minute data.
+        ⚠️ **Market is closed** - Showing historical 10-minute data from last trading day. 
+        TBQ/TSQ data not available in EOD mode.
         """)
     
-    # Prepare display dataframe
-    display_df = df[[
-        "signal", "symbol", "company_name", "price", "change_pct"
-    ]].copy()
+    # Prepare display dataframe with TBQ/TSQ columns if available
+    if is_market_open and 'tbq' in df.columns:
+        display_df = df[[
+            "signal", "symbol", "company_name", "price", "change_pct", "tbq", "tsq", "tbq_tsq_ratio"
+        ]].copy()
+        
+        display_df.columns = [
+            "Signal", "Symbol", "Company", "Price", "Change %", "TBQ", "TSQ", "TBQ/TSQ"
+        ]
+        
+        # Format columns
+        display_df["TBQ"] = display_df["TBQ"].apply(lambda x: f"{x:,.0f}")
+        display_df["TSQ"] = display_df["TSQ"].apply(lambda x: f"{x:,.0f}")
+        display_df["TBQ/TSQ"] = display_df["TBQ/TSQ"].apply(lambda x: f"{x:.2f}")
+    else:
+        display_df = df[[
+            "signal", "symbol", "company_name", "price", "change_pct"
+        ]].copy()
+        
+        display_df.columns = [
+            "Signal", "Symbol", "Company", "Price", "Change %"
+        ]
     
-    display_df.columns = [
-        "Signal", "Symbol", "Company Name", "Price", "Change %"
-    ]
-    
-    # Format columns
     display_df["Price"] = display_df["Price"].apply(lambda x: f"₹{x:,.2f}")
     display_df["Change %"] = display_df["Change %"].apply(lambda x: f"{x:+.2f}%")
     
     # Apply color styling
     def style_signal(val):
-        if val == "BUY":
-            return "background-color: #00c85320; color: #00c853; font-weight: 600;"
-        elif val == "SELL":
-            return "background-color: #ef444420; color: #ef4444; font-weight: 600;"
-        return ""
+        return "background-color: #00c85320; color: #00c853; font-weight: 600;"
     
     def style_change(val):
         if "+" in val:
@@ -1313,32 +1327,52 @@ def render_intraday_tab():
             return "color: #ef4444; font-weight: 600;"
         return ""
     
+    def style_ratio(val):
+        try:
+            ratio = float(val)
+            if ratio > 1.5:
+                return "background-color: #00c85320; color: #00c853; font-weight: 600;"
+            elif ratio < 0.67:
+                return "background-color: #ef444420; color: #ef4444; font-weight: 600;"
+        except:
+            pass
+        return ""
+    
     # Display as styled dataframe
     try:
         # Try new pandas API (2.1+)
-        st.dataframe(
-            display_df.style.map(style_signal, subset=["Signal"])
-                            .map(style_change, subset=["Change %"]),
-            use_container_width=True,
-            height=600
-        )
+        if "TBQ/TSQ" in display_df.columns:
+            st.dataframe(
+                display_df.style.map(style_signal, subset=["Signal"])
+                                .map(style_change, subset=["Change %"])
+                                .map(style_ratio, subset=["TBQ/TSQ"]),
+                use_container_width=True,
+                height=600
+            )
+        else:
+            st.dataframe(
+                display_df.style.map(style_signal, subset=["Signal"])
+                                .map(style_change, subset=["Change %"]),
+                use_container_width=True,
+                height=600
+            )
     except AttributeError:
         # Fall back to old pandas API
-        st.dataframe(
-            display_df.style.applymap(style_signal, subset=["Signal"])
-                            .applymap(style_change, subset=["Change %"]),
-            use_container_width=True,
-            height=600
-        )
-    # Display table
-    try:
-        # Try new pandas API (2.1+)
-        st.dataframe(
-            display_df.style.map(style_signal, subset=["Signal"])
-                            .map(style_change, subset=["Chg%"]),
-            use_container_width=True,
-            height=600
-        )
+        if "TBQ/TSQ" in display_df.columns:
+            st.dataframe(
+                display_df.style.applymap(style_signal, subset=["Signal"])
+                                .applymap(style_change, subset=["Change %"])
+                                .applymap(style_ratio, subset=["TBQ/TSQ"]),
+                use_container_width=True,
+                height=600
+            )
+        else:
+            st.dataframe(
+                display_df.style.applymap(style_signal, subset=["Signal"])
+                                .applymap(style_change, subset=["Change %"]),
+                use_container_width=True,
+                height=600
+            )
     except AttributeError:
         # Fall back to old pandas API
         st.dataframe(
