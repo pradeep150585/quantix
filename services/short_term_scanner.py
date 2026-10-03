@@ -21,7 +21,7 @@ import numpy as np
 from loguru import logger
 
 from services.instruments import get_nifty200_symbols
-from services.market_data import get_historical_df, get_quotes, parse_quote
+from services.market_data import get_quotes, parse_quote
 
 
 def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
@@ -65,14 +65,14 @@ def _calculate_ema_ha_close(ha_df: pd.DataFrame, period: int = 10) -> pd.Series:
 
 def _check_buy_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple[bool, dict]:
     """
-    Check if buy conditions are met
+    Check if buy conditions are met (REVERSE OF SELL for Chartink compatibility)
     
     Buy Conditions:
-    1. Previous: HA open < 10-min EMA of HA close
-    2. Previous: HA close > 10-min EMA of HA close (crossover)
-    3. Current: HA close > HA open (bullish candle)
-    4. Current: HA close > Previous HA close
-    5. Current: HA open = HA low (no lower wick)
+    1. Previous [-1]: HA open < EMA of HA close
+    2. Previous [-1]: HA close > EMA of HA close (crossover)
+    3. Current [0]: HA close > HA open (bullish candle)
+    4. Current [0]: HA close > Previous HA close
+    5. Current [0]: HA open = HA low (exact or very close)
     
     Returns:
         tuple: (conditions_met, debug_info)
@@ -80,15 +80,16 @@ def _check_buy_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple
     if len(ha_df) < 2:
         return False, {}
     
-    # Previous candle (index -2)
+    # Previous candle [-1] (index -2)
     prev_ha_open = ha_df.iloc[-2]['ha_open']
     prev_ha_close = ha_df.iloc[-2]['ha_close']
     prev_ema = ema_ha_close.iloc[-2]
     
-    # Current candle (index -1)
+    # Current candle [0] (index -1)
     curr_ha_open = ha_df.iloc[-1]['ha_open']
     curr_ha_close = ha_df.iloc[-1]['ha_close']
     curr_ha_low = ha_df.iloc[-1]['ha_low']
+    curr_ha_high = ha_df.iloc[-1]['ha_high']
     curr_ema = ema_ha_close.iloc[-1]
     
     # Check all buy conditions
@@ -96,23 +97,25 @@ def _check_buy_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple
     cond2 = prev_ha_close > prev_ema
     cond3 = curr_ha_close > curr_ha_open
     cond4 = curr_ha_close > prev_ha_close
-    # Allow small tolerance for HA open = HA low (within 0.1% of price)
-    tolerance = curr_ha_open * 0.001
-    cond5 = abs(curr_ha_open - curr_ha_low) <= tolerance
+    
+    # Condition 5: HA open = HA low (exact match in Chartink)
+    # Use very small tolerance (0.01 rupee) for floating point comparison
+    cond5 = abs(curr_ha_open - curr_ha_low) <= 0.01
     
     debug_info = {
-        'cond1_prev_open_lt_ema': cond1,
-        'cond2_prev_close_gt_ema': cond2,
-        'cond3_bullish_candle': cond3,
-        'cond4_close_gt_prev_close': cond4,
-        'cond5_open_eq_low': cond5,
+        'cond1': cond1,
+        'cond2': cond2,
+        'cond3': cond3,
+        'cond4': cond4,
+        'cond5': cond5,
         'prev_open': round(prev_ha_open, 2),
         'prev_close': round(prev_ha_close, 2),
         'prev_ema': round(prev_ema, 2),
         'curr_open': round(curr_ha_open, 2),
         'curr_close': round(curr_ha_close, 2),
         'curr_low': round(curr_ha_low, 2),
-        'curr_ema': round(curr_ema, 2)
+        'curr_high': round(curr_ha_high, 2),
+        'open_low_diff': round(abs(curr_ha_open - curr_ha_low), 4)
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
@@ -120,14 +123,14 @@ def _check_buy_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple
 
 def _check_sell_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple[bool, dict]:
     """
-    Check if sell conditions are met
+    Check if sell conditions are met (MATCHES CHARTINK CONDITION EXACTLY)
     
-    Sell Conditions:
-    1. Previous: HA open > 10-min EMA of HA close
-    2. Previous: HA close < 10-min EMA of HA close (crossover)
-    3. Current: HA close < HA open (bearish candle)
-    4. Current: HA close < Previous HA close
-    5. Current: HA open = HA high (no upper wick)
+    Sell Conditions (from Chartink):
+    1. Previous [-1]: HA open > EMA of HA close
+    2. Previous [-1]: HA close < EMA of HA close (crossover)
+    3. Current [0]: HA close < HA open (bearish candle)
+    4. Current [0]: HA close < Previous HA close
+    5. Current [0]: HA open = HA high (exact or very close)
     
     Returns:
         tuple: (conditions_met, debug_info)
@@ -135,15 +138,16 @@ def _check_sell_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tupl
     if len(ha_df) < 2:
         return False, {}
     
-    # Previous candle (index -2)
+    # Previous candle [-1] (index -2)
     prev_ha_open = ha_df.iloc[-2]['ha_open']
     prev_ha_close = ha_df.iloc[-2]['ha_close']
     prev_ema = ema_ha_close.iloc[-2]
     
-    # Current candle (index -1)
+    # Current candle [0] (index -1)
     curr_ha_open = ha_df.iloc[-1]['ha_open']
     curr_ha_close = ha_df.iloc[-1]['ha_close']
     curr_ha_high = ha_df.iloc[-1]['ha_high']
+    curr_ha_low = ha_df.iloc[-1]['ha_low']
     curr_ema = ema_ha_close.iloc[-1]
     
     # Check all sell conditions
@@ -151,23 +155,25 @@ def _check_sell_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tupl
     cond2 = prev_ha_close < prev_ema
     cond3 = curr_ha_close < curr_ha_open
     cond4 = curr_ha_close < prev_ha_close
-    # Allow small tolerance for HA open = HA high (within 0.1% of price)
-    tolerance = curr_ha_open * 0.001
-    cond5 = abs(curr_ha_open - curr_ha_high) <= tolerance
+    
+    # Condition 5: HA open = HA high (exact match in Chartink)
+    # Use very small tolerance (0.01 rupee) for floating point comparison
+    cond5 = abs(curr_ha_open - curr_ha_high) <= 0.01
     
     debug_info = {
-        'cond1_prev_open_gt_ema': cond1,
-        'cond2_prev_close_lt_ema': cond2,
-        'cond3_bearish_candle': cond3,
-        'cond4_close_lt_prev_close': cond4,
-        'cond5_open_eq_high': cond5,
+        'cond1': cond1,
+        'cond2': cond2,
+        'cond3': cond3,
+        'cond4': cond4,
+        'cond5': cond5,
         'prev_open': round(prev_ha_open, 2),
         'prev_close': round(prev_ha_close, 2),
         'prev_ema': round(prev_ema, 2),
         'curr_open': round(curr_ha_open, 2),
         'curr_close': round(curr_ha_close, 2),
         'curr_high': round(curr_ha_high, 2),
-        'curr_ema': round(curr_ema, 2)
+        'curr_low': round(curr_ha_low, 2),
+        'open_high_diff': round(abs(curr_ha_open - curr_ha_high), 4)
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
@@ -194,10 +200,20 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         is_buy, buy_debug = _check_buy_conditions(ha_df, ema_ha_close)
         is_sell, sell_debug = _check_sell_conditions(ha_df, ema_ha_close)
         
-        # Log first few stocks for debugging
-        if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
-            logger.info(f"{symbol} - BUY debug: {buy_debug}")
-            logger.info(f"{symbol} - SELL debug: {sell_debug}")
+        # Enhanced logging for ALL stocks to see what's happening
+        if is_sell or is_buy:
+            logger.info(f"✅ {symbol} - SIGNAL FOUND!")
+            logger.info(f"   BUY: {is_buy} | SELL: {is_sell}")
+            if is_sell:
+                logger.info(f"   SELL Debug: {sell_debug}")
+            if is_buy:
+                logger.info(f"   BUY Debug: {buy_debug}")
+        
+        # Log failures for first 5 stocks to debug
+        if not is_buy and not is_sell and symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
+            logger.info(f"❌ {symbol} - No signal")
+            logger.info(f"   SELL conditions: {sell_debug}")
+            logger.info(f"   BUY conditions: {buy_debug}")
         
         if not is_buy and not is_sell:
             return None
@@ -245,7 +261,9 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         }
         
     except Exception as e:
-        logger.debug(f"Intraday scan error {symbol}: {e}")
+        logger.error(f"Intraday scan error {symbol}: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return None
 
 
@@ -256,9 +274,22 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
         ikey = row.get("instrument_key", "")
         
         try:
-            # Get 10-minute data for today (intraday)
-            df = await get_historical_df(ikey, interval="10minute", days=1)
+            # Import the correct function for intraday data
+            from services.market_data import get_intraday_df
+            
+            # Get 10-minute intraday data
+            df = await get_intraday_df(ikey, interval="10minute")
+            
+            # Log data availability for first few stocks
+            if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
+                logger.info(f"{symbol}: Got {len(df)} 10-minute candles")
+                if not df.empty:
+                    logger.info(f"   Columns: {df.columns.tolist()}")
+                    logger.info(f"   Last candle: {df.iloc[-1].to_dict()}")
+            
             if df.empty or len(df) < 20:
+                if symbol in ['RELIANCE', 'TCS', 'INFY']:
+                    logger.warning(f"{symbol}: Insufficient data - {len(df)} candles (need 20+)")
                 return None
             
             result = _analyse_stock(
@@ -270,7 +301,9 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
             
             return result
         except Exception as e:
-            logger.debug(f"Intraday scan error {symbol}: {e}")
+            logger.error(f"Intraday scan error {symbol}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
 
 
