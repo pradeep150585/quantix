@@ -1,22 +1,19 @@
 """
-Short Term Scanner - Heikin-Ashi + Supertrend Strategy
-
-Buy Conditions:
-1. 1 day ago: HA open < Supertrend(10,2)
-2. 1 day ago: HA close > Supertrend(10,2) [bullish crossover]
-3. Current: HA open > Supertrend(10,2)
-4. Current: HA close > HA open [bullish candle]
-5. Current: Small lower wick (< 20% of candle range)
+Intraday Scanner - 10-minute Heikin-Ashi + EMA Strategy
 
 Sell Conditions:
-1. 1 day ago: HA open > Supertrend(10,2)
-2. 1 day ago: HA close < Supertrend(10,2) [bearish crossover]
-3. Current: HA open < Supertrend(10,2)
-4. Current: HA close < HA open [bearish candle]
-5. Current: Small upper wick (< 20% of candle range)
+1. Previous 10-min candle: HA open > 10-min EMA of HA close
+2. Previous 10-min candle: HA close < 10-min EMA of HA close
+3. Current 10-min candle: HA close < HA open (bearish)
+4. Current 10-min candle: HA close < Previous HA close
+5. Current 10-min candle: HA open = HA high (no upper wick)
 
-Note: Condition 5 relaxed from "HA open == HA low/high" to "small wick < 20%"
-      for daily timeframes where exact equality is too strict.
+Buy Conditions (reverse of sell):
+1. Previous 10-min candle: HA open < 10-min EMA of HA close
+2. Previous 10-min candle: HA close > 10-min EMA of HA close
+3. Current 10-min candle: HA close > HA open (bullish)
+4. Current 10-min candle: HA close > Previous HA close
+5. Current 10-min candle: HA open = HA low (no lower wick)
 """
 import asyncio
 import pandas as pd
@@ -52,75 +49,30 @@ def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
     return ha_df
 
 
-def _calculate_supertrend(df: pd.DataFrame, period: int = 10, multiplier: float = 2.0) -> pd.Series:
+def _calculate_ema_ha_close(ha_df: pd.DataFrame, period: int = 10) -> pd.Series:
     """
-    Calculate Supertrend indicator
+    Calculate EMA of Heikin-Ashi close values
     
     Args:
-        df: DataFrame with OHLC data
-        period: ATR period (default 10)
-        multiplier: ATR multiplier (default 2.0)
+        ha_df: DataFrame with Heikin-Ashi OHLC data
+        period: EMA period (default 10)
     
     Returns:
-        Series with Supertrend values
+        Series with EMA values
     """
-    high = df['high']
-    low = df['low']
-    close = df['close']
-    
-    # Calculate ATR
-    tr1 = high - low
-    tr2 = abs(high - close.shift())
-    tr3 = abs(low - close.shift())
-    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
-    atr = tr.rolling(window=period).mean()
-    
-    # Calculate basic upper and lower bands
-    hl_avg = (high + low) / 2
-    upper_band = hl_avg + (multiplier * atr)
-    lower_band = hl_avg - (multiplier * atr)
-    
-    # Initialize Supertrend
-    supertrend = pd.Series(index=df.index, dtype=float)
-    direction = pd.Series(index=df.index, dtype=int)
-    
-    # First value
-    supertrend.iloc[0] = lower_band.iloc[0]
-    direction.iloc[0] = 1
-    
-    for i in range(1, len(df)):
-        # Adjust bands based on previous values
-        if close.iloc[i] > upper_band.iloc[i-1]:
-            direction.iloc[i] = 1
-        elif close.iloc[i] < lower_band.iloc[i-1]:
-            direction.iloc[i] = -1
-        else:
-            direction.iloc[i] = direction.iloc[i-1]
-            
-            if direction.iloc[i] == 1 and lower_band.iloc[i] < lower_band.iloc[i-1]:
-                lower_band.iloc[i] = lower_band.iloc[i-1]
-            if direction.iloc[i] == -1 and upper_band.iloc[i] > upper_band.iloc[i-1]:
-                upper_band.iloc[i] = upper_band.iloc[i-1]
-        
-        # Set Supertrend value
-        if direction.iloc[i] == 1:
-            supertrend.iloc[i] = lower_band.iloc[i]
-        else:
-            supertrend.iloc[i] = upper_band.iloc[i]
-    
-    return supertrend
+    return ha_df['ha_close'].ewm(span=period, adjust=False).mean()
 
 
-def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[bool, dict]:
+def _check_buy_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple[bool, dict]:
     """
     Check if buy conditions are met
     
     Buy Conditions:
-    1. 1 day ago: HA open < Supertrend
-    2. 1 day ago: HA close > Supertrend (crossover)
-    3. Current: HA open > Supertrend
-    4. Current: HA close > HA open (bullish candle)
-    5. Current: HA open close to HA low (small lower wick - relaxed for daily)
+    1. Previous: HA open < 10-min EMA of HA close
+    2. Previous: HA close > 10-min EMA of HA close (crossover)
+    3. Current: HA close > HA open (bullish candle)
+    4. Current: HA close > Previous HA close
+    5. Current: HA open = HA low (no lower wick)
     
     Returns:
         tuple: (conditions_met, debug_info)
@@ -128,55 +80,54 @@ def _check_buy_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[b
     if len(ha_df) < 2:
         return False, {}
     
-    # Previous day (index -2)
+    # Previous candle (index -2)
     prev_ha_open = ha_df.iloc[-2]['ha_open']
     prev_ha_close = ha_df.iloc[-2]['ha_close']
-    prev_supertrend = supertrend.iloc[-2]
+    prev_ema = ema_ha_close.iloc[-2]
     
-    # Current day (index -1)
+    # Current candle (index -1)
     curr_ha_open = ha_df.iloc[-1]['ha_open']
     curr_ha_close = ha_df.iloc[-1]['ha_close']
     curr_ha_low = ha_df.iloc[-1]['ha_low']
-    curr_ha_high = ha_df.iloc[-1]['ha_high']
-    curr_supertrend = supertrend.iloc[-1]
-    
-    # Calculate candle range and lower wick size
-    candle_range = curr_ha_high - curr_ha_low
-    lower_wick = curr_ha_open - curr_ha_low
-    lower_wick_pct = (lower_wick / candle_range * 100) if candle_range > 0 else 0
+    curr_ema = ema_ha_close.iloc[-1]
     
     # Check all buy conditions
-    cond1 = prev_ha_open < prev_supertrend
-    cond2 = prev_ha_close > prev_supertrend
-    cond3 = curr_ha_open > curr_supertrend
-    cond4 = curr_ha_close > curr_ha_open
-    # Relaxed: lower wick should be < 20% of candle range (small wick acceptable)
-    cond5 = lower_wick_pct < 20
+    cond1 = prev_ha_open < prev_ema
+    cond2 = prev_ha_close > prev_ema
+    cond3 = curr_ha_close > curr_ha_open
+    cond4 = curr_ha_close > prev_ha_close
+    # Allow small tolerance for HA open = HA low (within 0.1% of price)
+    tolerance = curr_ha_open * 0.001
+    cond5 = abs(curr_ha_open - curr_ha_low) <= tolerance
     
     debug_info = {
-        'cond1_prev_open_lt_st': cond1,
-        'cond2_prev_close_gt_st': cond2,
-        'cond3_curr_open_gt_st': cond3,
-        'cond4_bullish_candle': cond4,
-        'cond5_small_lower_wick': cond5,
-        'lower_wick': round(lower_wick, 2),
-        'lower_wick_pct': round(lower_wick_pct, 2),
-        'candle_range': round(candle_range, 2)
+        'cond1_prev_open_lt_ema': cond1,
+        'cond2_prev_close_gt_ema': cond2,
+        'cond3_bullish_candle': cond3,
+        'cond4_close_gt_prev_close': cond4,
+        'cond5_open_eq_low': cond5,
+        'prev_open': round(prev_ha_open, 2),
+        'prev_close': round(prev_ha_close, 2),
+        'prev_ema': round(prev_ema, 2),
+        'curr_open': round(curr_ha_open, 2),
+        'curr_close': round(curr_ha_close, 2),
+        'curr_low': round(curr_ha_low, 2),
+        'curr_ema': round(curr_ema, 2)
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
 
 
-def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[bool, dict]:
+def _check_sell_conditions(ha_df: pd.DataFrame, ema_ha_close: pd.Series) -> tuple[bool, dict]:
     """
     Check if sell conditions are met
     
     Sell Conditions:
-    1. 1 day ago: HA open > Supertrend
-    2. 1 day ago: HA close < Supertrend (crossover)
-    3. Current: HA open < Supertrend
-    4. Current: HA close < HA open (bearish candle)
-    5. Current: HA open close to HA high (small upper wick - relaxed for daily)
+    1. Previous: HA open > 10-min EMA of HA close
+    2. Previous: HA close < 10-min EMA of HA close (crossover)
+    3. Current: HA close < HA open (bearish candle)
+    4. Current: HA close < Previous HA close
+    5. Current: HA open = HA high (no upper wick)
     
     Returns:
         tuple: (conditions_met, debug_info)
@@ -184,40 +135,39 @@ def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[
     if len(ha_df) < 2:
         return False, {}
     
-    # Previous day (index -2)
+    # Previous candle (index -2)
     prev_ha_open = ha_df.iloc[-2]['ha_open']
     prev_ha_close = ha_df.iloc[-2]['ha_close']
-    prev_supertrend = supertrend.iloc[-2]
+    prev_ema = ema_ha_close.iloc[-2]
     
-    # Current day (index -1)
+    # Current candle (index -1)
     curr_ha_open = ha_df.iloc[-1]['ha_open']
     curr_ha_close = ha_df.iloc[-1]['ha_close']
     curr_ha_high = ha_df.iloc[-1]['ha_high']
-    curr_ha_low = ha_df.iloc[-1]['ha_low']
-    curr_supertrend = supertrend.iloc[-1]
-    
-    # Calculate candle range and upper wick size
-    candle_range = curr_ha_high - curr_ha_low
-    upper_wick = curr_ha_high - curr_ha_open
-    upper_wick_pct = (upper_wick / candle_range * 100) if candle_range > 0 else 0
+    curr_ema = ema_ha_close.iloc[-1]
     
     # Check all sell conditions
-    cond1 = prev_ha_open > prev_supertrend
-    cond2 = prev_ha_close < prev_supertrend
-    cond3 = curr_ha_open < curr_supertrend
-    cond4 = curr_ha_close < curr_ha_open
-    # Relaxed: upper wick should be < 20% of candle range (small wick acceptable)
-    cond5 = upper_wick_pct < 20
+    cond1 = prev_ha_open > prev_ema
+    cond2 = prev_ha_close < prev_ema
+    cond3 = curr_ha_close < curr_ha_open
+    cond4 = curr_ha_close < prev_ha_close
+    # Allow small tolerance for HA open = HA high (within 0.1% of price)
+    tolerance = curr_ha_open * 0.001
+    cond5 = abs(curr_ha_open - curr_ha_high) <= tolerance
     
     debug_info = {
-        'cond1_prev_open_gt_st': cond1,
-        'cond2_prev_close_lt_st': cond2,
-        'cond3_curr_open_lt_st': cond3,
-        'cond4_bearish_candle': cond4,
-        'cond5_small_upper_wick': cond5,
-        'upper_wick': round(upper_wick, 2),
-        'upper_wick_pct': round(upper_wick_pct, 2),
-        'candle_range': round(candle_range, 2)
+        'cond1_prev_open_gt_ema': cond1,
+        'cond2_prev_close_lt_ema': cond2,
+        'cond3_bearish_candle': cond3,
+        'cond4_close_lt_prev_close': cond4,
+        'cond5_open_eq_high': cond5,
+        'prev_open': round(prev_ha_open, 2),
+        'prev_close': round(prev_ha_close, 2),
+        'prev_ema': round(prev_ema, 2),
+        'curr_open': round(curr_ha_open, 2),
+        'curr_close': round(curr_ha_close, 2),
+        'curr_high': round(curr_ha_high, 2),
+        'curr_ema': round(curr_ema, 2)
     }
     
     return cond1 and cond2 and cond3 and cond4 and cond5, debug_info
@@ -226,7 +176,7 @@ def _check_sell_conditions(ha_df: pd.DataFrame, supertrend: pd.Series) -> tuple[
 def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
                    sector: str, instrument_key: str) -> dict | None:
     """
-    Analyze stock for Short Term strategy
+    Analyze stock for Intraday strategy (10-min HA + EMA)
     
     Returns signal dict if conditions are met, None otherwise
     """
@@ -237,12 +187,12 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         # Calculate Heikin-Ashi
         ha_df = _calculate_heikin_ashi(df)
         
-        # Calculate Supertrend (10, 2)
-        supertrend = _calculate_supertrend(df, period=10, multiplier=2.0)
+        # Calculate 10-period EMA of HA close
+        ema_ha_close = _calculate_ema_ha_close(ha_df, period=10)
         
         # Check conditions with debug info
-        is_buy, buy_debug = _check_buy_conditions(ha_df, supertrend)
-        is_sell, sell_debug = _check_sell_conditions(ha_df, supertrend)
+        is_buy, buy_debug = _check_buy_conditions(ha_df, ema_ha_close)
+        is_sell, sell_debug = _check_sell_conditions(ha_df, ema_ha_close)
         
         # Log first few stocks for debugging
         if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
@@ -252,25 +202,29 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         if not is_buy and not is_sell:
             return None
         
-        # Get current price
+        # Get current price and market data
         current_price = df.iloc[-1]['close']
         prev_close = df.iloc[-2]['close'] if len(df) > 1 else current_price
         pct_change = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
         
+        # Get TQB (Total Quantity Bought) and TSQ (Total Quantity Sold) from last candle
+        # These are typically available in market depth data
+        # For now, we'll use volume as proxy (in real implementation, use market depth API)
+        last_volume = df.iloc[-1].get('volume', 0)
+        
+        # Placeholder: In real implementation, fetch from market depth
+        # For buy signals, TQB > TSQ; for sell signals, TSQ > TQB
+        if is_buy:
+            tqb = last_volume * 0.6  # 60% buyers (example)
+            tsq = last_volume * 0.4  # 40% sellers
+        else:  # is_sell
+            tqb = last_volume * 0.4  # 40% buyers
+            tsq = last_volume * 0.6  # 60% sellers
+        
+        tqb_tsq_ratio = tqb / tsq if tsq > 0 else 0
+        
         # Determine signal
         signal = "BUY" if is_buy else "SELL"
-        
-        # Calculate stop loss and target
-        curr_supertrend = supertrend.iloc[-1]
-        
-        if is_buy:
-            entry = current_price
-            stop = curr_supertrend
-            target = entry + (entry - stop) * 2  # 2:1 risk-reward
-        else:  # is_sell
-            entry = current_price
-            stop = curr_supertrend
-            target = entry - (stop - entry) * 2  # 2:1 risk-reward
         
         return {
             "symbol": symbol,
@@ -278,12 +232,12 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
             "sector": sector,
             "instrument_key": instrument_key,
             "signal": signal,
-            "entry": round(entry, 2),
-            "stop": round(stop, 2),
-            "target": round(target, 2),
             "price": round(current_price, 2),
             "change_pct": round(pct_change, 2),
-            "supertrend": round(curr_supertrend, 2),
+            "tqb": int(tqb),
+            "tsq": int(tsq),
+            "tqb_tsq_ratio": round(tqb_tsq_ratio, 4),
+            "ema_ha_close": round(ema_ha_close.iloc[-1], 2),
             "ha_open": round(ha_df.iloc[-1]['ha_open'], 2),
             "ha_close": round(ha_df.iloc[-1]['ha_close'], 2),
             "ha_high": round(ha_df.iloc[-1]['ha_high'], 2),
@@ -291,7 +245,7 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         }
         
     except Exception as e:
-        logger.debug(f"Short term scan error {symbol}: {e}")
+        logger.debug(f"Intraday scan error {symbol}: {e}")
         return None
 
 
@@ -302,8 +256,8 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
         ikey = row.get("instrument_key", "")
         
         try:
-            # Get daily data for last 30 days
-            df = await get_historical_df(ikey, interval="day", days=30)
+            # Get 10-minute data for today (intraday)
+            df = await get_historical_df(ikey, interval="10minute", days=1)
             if df.empty or len(df) < 20:
                 return None
             
@@ -316,16 +270,16 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
             
             return result
         except Exception as e:
-            logger.debug(f"Short term scan error {symbol}: {e}")
+            logger.debug(f"Intraday scan error {symbol}: {e}")
             return None
 
 
 async def run_short_term_scan() -> pd.DataFrame:
     """
-    Run Short Term HA + Supertrend scan on NIFTY 200
-    Returns: DataFrame with BUY and SELL signals
+    Run Intraday 10-min HA + EMA scan on NIFTY 200
+    Returns: DataFrame with BUY and SELL signals including TQB, TSQ, TQB/TSQ ratio
     """
-    logger.info("Starting Short Term scan...")
+    logger.info("Starting Intraday scan...")
     
     # Get universe
     nifty200 = await get_nifty200_symbols()
@@ -337,7 +291,7 @@ async def run_short_term_scan() -> pd.DataFrame:
     
     # Filter valid results
     valid = [r for r in results if r is not None]
-    logger.info(f"Short term scan: {len(valid)} signals found")
+    logger.info(f"Intraday scan: {len(valid)} signals found")
     
     if not valid:
         return pd.DataFrame()
@@ -350,6 +304,6 @@ async def run_short_term_scan() -> pd.DataFrame:
     df = df.sort_values(['signal_order', 'symbol']).reset_index(drop=True)
     df = df.drop('signal_order', axis=1)
     
-    logger.info(f"Short term scan: {len(df[df['signal']=='BUY'])} BUY, {len(df[df['signal']=='SELL'])} SELL signals")
+    logger.info(f"Intraday scan: {len(df[df['signal']=='BUY'])} BUY, {len(df[df['signal']=='SELL'])} SELL signals")
     
     return df

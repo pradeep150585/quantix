@@ -927,12 +927,11 @@ def render(slot):
     slot.empty()
     with slot.container():
         # Create tabs for all scanners
-        tab_elder, tab_sepa, tab_swing, tab_short, tab_backtest = st.tabs([
+        tab_elder, tab_sepa, tab_swing, tab_intraday = st.tabs([
             "Elder Triple Screen", 
             "SEPA Screener",
             "Master Swing Trader",
-            "Short Term",
-            "📊 Backtest"
+            "Intraday"
         ])
         
         with tab_elder:
@@ -944,11 +943,8 @@ def render(slot):
         with tab_swing:
             render_swing_tab()
         
-        with tab_short:
-            render_short_term_tab()
-        
-        with tab_backtest:
-            render_backtest_tab()
+        with tab_intraday:
+            render_intraday_tab()
 
 
 def render_elder_tab():
@@ -1240,106 +1236,16 @@ body{{background:#0b0e17;color:#d1d4dc;padding:12px;}}</style></head><body>
     return html
 
 
-def render_backtest_tab():
-    """Render Backtest Results tab - Buy Ready signals only"""
-    
-    # Fetch backtest data (last 30 days, all scanners)
-    cache_key = "_backtest_data_30_All"
-    
-    if cache_key not in st.session_state:
-        from components.ui import loading_html
-        from services.backtest import get_backtest_results
-        
-        ph = st.empty()
-        ph.markdown(loading_html("Analyzing historical signals..."), unsafe_allow_html=True)
-        
-        try:
-            results_df = _run(get_backtest_results(days=30, scanner_type=None))
-            st.session_state[cache_key] = results_df
-            ph.empty()
-        except Exception as e:
-            ph.empty()
-            st.error(f"Failed to fetch backtest data: {e}")
-            st.code(traceback.format_exc())
-            return
-    else:
-        results_df = st.session_state[cache_key]
-    
-    if results_df.empty:
-        st.info("No historical signals found. Signals will appear here after running scans.")
-        return
-    
-    # Filter for Buy Ready signals only (BUY NOW, BUY ON BREAKOUT, STRONG BUY, BUY)
-    buy_signals = ["BUY NOW", "BUY ON BREAKOUT", "STRONG BUY", "BUY"]
-    buy_ready_df = results_df[results_df["signal"].isin(buy_signals)]
-    
-    if buy_ready_df.empty:
-        st.info("No Buy Ready signals in the last 30 days.")
-        return
-    
-    # Prepare display dataframe with Strategy column
-    display_df = buy_ready_df[[
-        "signal_date", "scanner_type", "symbol", "entry_price", 
-        "current_price", "target1_price", 
-        "target1_achieved", "achieved_date", "status"
-    ]].copy()
-    
-    display_df.columns = [
-        "Date", "Strategy", "Symbol", "Entry", "CMP", "Target", 
-        "Achieved", "Achieved Date", "Status"
-    ]
-    
-    # Format columns
-    display_df["Entry"] = display_df["Entry"].apply(lambda x: f"₹{x:,.2f}" if x > 0 else "-")
-    display_df["CMP"] = display_df["CMP"].apply(lambda x: f"₹{x:,.2f}" if x > 0 else "-")
-    display_df["Target"] = display_df["Target"].apply(lambda x: f"₹{x:,.2f}" if x > 0 else "-")
-    display_df["Achieved"] = display_df["Achieved"].apply(lambda x: "✅ Yes" if x else "❌ No")
-    display_df["Achieved Date"] = display_df["Achieved Date"].fillna("-")
-    
-    # Apply styling
-    def style_status(val):
-        if "T2 Achieved" in val or "T1 Achieved" in val:
-            return "background-color: #00c85320; color: #00c853; font-weight: 600;"
-        elif "Stop Hit" in val:
-            return "background-color: #ef444420; color: #ef4444; font-weight: 600;"
-        elif "Active" in val:
-            return "background-color: #60a5fa20; color: #60a5fa; font-weight: 600;"
-        return ""
-    
-    def style_achieved(val):
-        if "✅" in val:
-            return "color: #00c853;"
-        elif "❌" in val:
-            return "color: #ef4444;"
-        return ""
-    
-    # Display as styled dataframe
-    try:
-        # Try new pandas API (2.1+)
-        st.dataframe(
-            display_df.style.map(style_status, subset=["Status"])
-                            .map(style_achieved, subset=["Achieved"]),
-            use_container_width=True,
-            height=600
-        )
-    except AttributeError:
-        # Fall back to old pandas API
-        st.dataframe(
-            display_df.style.applymap(style_status, subset=["Status"])
-                            .applymap(style_achieved, subset=["Achieved"]),
-            use_container_width=True,
-            height=600
-        )
 
 
-def render_short_term_tab():
-    """Render Short Term (HA + Supertrend) tab"""
-    cache_key = "_short_term_scan_data"
+def render_intraday_tab():
+    """Render Intraday (10-min HA + EMA) tab"""
+    cache_key = "_intraday_scan_data"
     
     if cache_key not in st.session_state:
         from components.ui import loading_html
         ph = st.empty()
-        ph.markdown(loading_html("Running Short Term scan..."), unsafe_allow_html=True)
+        ph.markdown(loading_html("Running Intraday scan..."), unsafe_allow_html=True)
         
         try:
             df = _run(run_short_term_scan())
@@ -1347,54 +1253,55 @@ def render_short_term_tab():
             ph.empty()
         except Exception as e:
             ph.empty()
-            st.error(f"Short Term scan failed: {e}")
+            st.error(f"Intraday scan failed: {e}")
             st.code(traceback.format_exc())
             return
     else:
         df = st.session_state[cache_key]
     
     if df.empty:
-        st.info("No Short Term signals found. The strategy requires specific HA + Supertrend crossover conditions.")
+        st.info("No Intraday signals found. The strategy requires specific 10-min HA + EMA crossover conditions.")
         return
     
-    # Display simple table
-    st.markdown(f"### Short Term Signals ({len(df)} stocks)")
-    st.markdown("**Strategy:** Heikin-Ashi + Supertrend(10,2) crossover signals")
+    # Display table with TQB, TSQ, and TQB/TSQ
+    st.markdown(f"### Intraday Signals ({len(df)} stocks)")
+    st.markdown("**Strategy:** 10-min Heikin-Ashi + EMA crossover signals")
     
     # Prepare display dataframe
     display_df = df[[
-        "signal", "symbol", "price", "change_pct", 
-        "entry", "stop", "target", "supertrend"
+        "signal", "symbol", "company_name", "tqb", "tsq", "tqb_tsq_ratio"
     ]].copy()
     
     display_df.columns = [
-        "Signal", "Symbol", "CMP", "Chg%", 
-        "Entry", "Stop", "Target", "Supertrend"
+        "Signal", "Symbol", "Company Name", "TQB", "TSQ", "TQB/TSQ"
     ]
     
-    # Format columns
-    display_df["CMP"] = display_df["CMP"].apply(lambda x: f"₹{x:,.2f}")
-    display_df["Chg%"] = display_df["Chg%"].apply(lambda x: f"{x:+.2f}%")
-    display_df["Entry"] = display_df["Entry"].apply(lambda x: f"₹{x:,.2f}")
-    display_df["Stop"] = display_df["Stop"].apply(lambda x: f"₹{x:,.2f}")
-    display_df["Target"] = display_df["Target"].apply(lambda x: f"₹{x:,.2f}")
-    display_df["Supertrend"] = display_df["Supertrend"].apply(lambda x: f"₹{x:,.2f}")
+    # Format TQB/TSQ ratio
+    display_df["TQB/TSQ"] = display_df["TQB/TSQ"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "-")
     
-    # Apply styling
+    # Apply color styling
     def style_signal(val):
         if val == "BUY":
-            return "background-color: #00c85320; color: #00c853; font-weight: 700;"
+            return "background-color: #00c85320; color: #00c853; font-weight: 600;"
         elif val == "SELL":
-            return "background-color: #ef444420; color: #ef4444; font-weight: 700;"
+            return "background-color: #ef444420; color: #ef4444; font-weight: 600;"
         return ""
     
-    def style_change(val):
-        if "+" in val:
-            return "color: #00c853; font-weight: 600;"
-        elif "-" in val and val != "-":
-            return "color: #ef4444; font-weight: 600;"
-        return ""
-    
+    # Display as styled dataframe
+    try:
+        # Try new pandas API (2.1+)
+        st.dataframe(
+            display_df.style.map(style_signal, subset=["Signal"]),
+            use_container_width=True,
+            height=600
+        )
+    except AttributeError:
+        # Fall back to old pandas API
+        st.dataframe(
+            display_df.style.applymap(style_signal, subset=["Signal"]),
+            use_container_width=True,
+            height=600
+        )
     # Display table
     try:
         # Try new pandas API (2.1+)
