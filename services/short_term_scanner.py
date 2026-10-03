@@ -1,6 +1,10 @@
 """
 Intraday Scanner - 10-minute Heikin-Ashi + EMA Strategy
 
+Works in two modes:
+1. Market Hours: Uses live 1-minute data aggregated to 10-minute (starts after 2 candles = 9:35 AM)
+2. Market Closed: Uses EOD historical data as 10-minute proxy for backtesting/analysis
+
 Sell Conditions:
 1. Previous 10-min candle: HA open > 10-min EMA of HA close
 2. Previous 10-min candle: HA close < 10-min EMA of HA close
@@ -18,10 +22,29 @@ Buy Conditions (reverse of sell):
 import asyncio
 import pandas as pd
 import numpy as np
+from datetime import datetime, time as dt_time
 from loguru import logger
 
 from services.instruments import get_nifty200_symbols
 from services.market_data import get_quotes, parse_quote
+
+
+def _is_market_open() -> bool:
+    """
+    Check if market is currently open (9:15 AM - 3:30 PM IST, Mon-Fri)
+    """
+    now = datetime.now()
+    
+    # Check if weekday (Monday=0, Sunday=6)
+    if now.weekday() >= 5:  # Saturday or Sunday
+        return False
+    
+    # Market hours: 9:15 AM to 3:30 PM
+    market_open = dt_time(9, 15)
+    market_close = dt_time(15, 30)
+    current_time = now.time()
+    
+    return market_open <= current_time <= market_close
 
 
 def _aggregate_to_10min(df_1min: pd.DataFrame) -> pd.DataFrame:
@@ -58,6 +81,28 @@ def _aggregate_to_10min(df_1min: pd.DataFrame) -> pd.DataFrame:
     df_10min = df_10min.reset_index()
     
     return df_10min
+
+
+def _use_daily_as_10min(df_daily: pd.DataFrame) -> pd.DataFrame:
+    """
+    Use daily candles as 10-minute proxy when market is closed
+    This allows backtesting and analysis with EOD data
+    
+    Args:
+        df_daily: DataFrame with daily OHLCV data
+    
+    Returns:
+        DataFrame with same structure (treating each day as a "10-min" candle)
+    """
+    if df_daily.empty:
+        return pd.DataFrame()
+    
+    # Simply return daily data - conditions will work the same way
+    # Just treating each daily candle as if it were a 10-min candle
+    df = df_daily.copy()
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    
+    return df
 
 
 def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
@@ -259,22 +304,6 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         prev_close = df.iloc[-2]['close'] if len(df) > 1 else current_price
         pct_change = ((current_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
         
-        # Get TQB (Total Quantity Bought) and TSQ (Total Quantity Sold) from last candle
-        # These are typically available in market depth data
-        # For now, we'll use volume as proxy (in real implementation, use market depth API)
-        last_volume = df.iloc[-1].get('volume', 0)
-        
-        # Placeholder: In real implementation, fetch from market depth
-        # For buy signals, TQB > TSQ; for sell signals, TSQ > TQB
-        if is_buy:
-            tqb = last_volume * 0.6  # 60% buyers (example)
-            tsq = last_volume * 0.4  # 40% sellers
-        else:  # is_sell
-            tqb = last_volume * 0.4  # 40% buyers
-            tsq = last_volume * 0.6  # 60% sellers
-        
-        tqb_tsq_ratio = tqb / tsq if tsq > 0 else 0
-        
         # Determine signal
         signal = "BUY" if is_buy else "SELL"
         
@@ -286,9 +315,6 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
             "signal": signal,
             "price": round(current_price, 2),
             "change_pct": round(pct_change, 2),
-            "tqb": int(tqb),
-            "tsq": int(tsq),
-            "tqb_tsq_ratio": round(tqb_tsq_ratio, 4),
             "ema_ha_close": round(ema_ha_close.iloc[-1], 2),
             "ha_open": round(ha_df.iloc[-1]['ha_open'], 2),
             "ha_close": round(ha_df.iloc[-1]['ha_close'], 2),
@@ -303,42 +329,49 @@ def _analyse_stock(df: pd.DataFrame, symbol: str, company_name: str,
         return None
 
 
-async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
-    """Process single stock"""
+async def _process_stock(row: pd.Series, sem: asyncio.Semaphore, is_market_open: bool) -> dict | None:
+    """Process single stock - uses live data if market open, EOD data if closed"""
     async with sem:
         symbol = row.get("symbol", "")
         ikey = row.get("instrument_key", "")
         
         try:
-            # Get 1-minute intraday data and aggregate to 10-minute
-            from services.market_data import get_intraday_df
-            
-            # Get 1-minute data (Upstox supports this)
-            df_1min = await get_intraday_df(ikey, interval="1minute")
-            
-            # Log data availability for first few stocks
-            if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
-                logger.info(f"{symbol}: Got {len(df_1min)} 1-minute candles")
-            
-            if df_1min.empty:
+            if is_market_open:
+                # Market is open: Use 1-minute live data aggregated to 10-minute
+                from services.market_data import get_intraday_df
+                
+                df_1min = await get_intraday_df(ikey, interval="1minute")
+                
+                if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
+                    logger.info(f"{symbol}: Got {len(df_1min)} 1-minute candles (LIVE)")
+                
+                if df_1min.empty:
+                    return None
+                
+                # Aggregate to 10-minute
+                df = _aggregate_to_10min(df_1min)
+                
                 if symbol in ['RELIANCE', 'TCS', 'INFY']:
-                    logger.warning(f"{symbol}: No 1-minute data available")
-                return None
-            
-            # Aggregate to 10-minute candles
-            df = _aggregate_to_10min(df_1min)
-            
-            if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
-                logger.info(f"{symbol}: Aggregated to {len(df)} 10-minute candles")
-                if not df.empty:
-                    logger.info(f"   Date range: {df['datetime'].min()} to {df['datetime'].max()}")
-                    logger.info(f"   Last candle: {df.iloc[-1].to_dict()}")
-            
-            if df.empty or len(df) < 20:
+                    logger.info(f"{symbol}: Aggregated to {len(df)} 10-minute candles")
+                
+                # Need at least 2 candles (20 minutes) to start showing signals
+                if len(df) < 2:
+                    return None
+                    
+            else:
+                # Market is closed: Use EOD historical data (daily candles as proxy)
+                from services.market_data import get_historical_df
+                
+                # Get last 30 days of daily data
+                df = await get_historical_df(ikey, interval="day", days=30)
+                
                 if symbol in ['RELIANCE', 'TCS', 'INFY']:
-                    logger.warning(f"{symbol}: Insufficient 10-min data - {len(df)} candles (need 20+)")
-                return None
+                    logger.info(f"{symbol}: Got {len(df)} daily candles (EOD mode)")
+                
+                if df.empty or len(df) < 20:
+                    return None
             
+            # Analyze with same logic regardless of data source
             result = _analyse_stock(
                 df, symbol,
                 row.get("company_name", symbol),
@@ -347,6 +380,7 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
             )
             
             return result
+            
         except Exception as e:
             logger.error(f"Intraday scan error {symbol}: {e}")
             import traceback
@@ -357,21 +391,30 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
 async def run_short_term_scan() -> pd.DataFrame:
     """
     Run Intraday 10-min HA + EMA scan on NIFTY 200
-    Returns: DataFrame with BUY and SELL signals including TQB, TSQ, TQB/TSQ ratio
+    
+    Modes:
+    - Market Open (9:15 AM - 3:30 PM): Uses live 1-min data aggregated to 10-min
+    - Market Closed: Uses EOD daily data for analysis/backtesting
+    
+    Returns: DataFrame with BUY and SELL signals
     """
-    logger.info("Starting Intraday scan...")
+    # Check if market is open
+    is_market_open = _is_market_open()
+    mode = "LIVE" if is_market_open else "EOD"
+    
+    logger.info(f"Starting Intraday scan in {mode} mode...")
     
     # Get universe
     nifty200 = await get_nifty200_symbols()
     
     # Scan stocks concurrently
     sem = asyncio.Semaphore(20)
-    tasks = [_process_stock(row, sem) for _, row in nifty200.iterrows()]
+    tasks = [_process_stock(row, sem, is_market_open) for _, row in nifty200.iterrows()]
     results = await asyncio.gather(*tasks)
     
     # Filter valid results
     valid = [r for r in results if r is not None]
-    logger.info(f"Intraday scan: {len(valid)} signals found")
+    logger.info(f"Intraday scan ({mode}): {len(valid)} signals found")
     
     if not valid:
         return pd.DataFrame()
@@ -384,6 +427,6 @@ async def run_short_term_scan() -> pd.DataFrame:
     df = df.sort_values(['signal_order', 'symbol']).reset_index(drop=True)
     df = df.drop('signal_order', axis=1)
     
-    logger.info(f"Intraday scan: {len(df[df['signal']=='BUY'])} BUY, {len(df[df['signal']=='SELL'])} SELL signals")
+    logger.info(f"Intraday scan ({mode}): {len(df[df['signal']=='BUY'])} BUY, {len(df[df['signal']=='SELL'])} SELL signals")
     
     return df

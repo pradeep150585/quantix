@@ -1263,21 +1263,30 @@ def render_intraday_tab():
         st.info("No Intraday signals found. The strategy requires specific 10-min HA + EMA crossover conditions.")
         return
     
-    # Display table with TQB, TSQ, and TQB/TSQ
-    st.markdown(f"### Intraday Signals ({len(df)} stocks)")
+    # Check if market is open to show appropriate message
+    from services.short_term_scanner import _is_market_open
+    is_market_open = _is_market_open()
+    mode = "LIVE (Intraday)" if is_market_open else "EOD (Daily Data)"
+    
+    # Display table
+    st.markdown(f"### Intraday Signals ({len(df)} stocks) - Mode: {mode}")
     st.markdown("**Strategy:** 10-min Heikin-Ashi + EMA crossover signals")
+    
+    if not is_market_open:
+        st.info("📊 Market is closed. Showing analysis based on EOD (End of Day) data. Live signals will appear during market hours (9:35 AM onwards).")
     
     # Prepare display dataframe
     display_df = df[[
-        "signal", "symbol", "company_name", "tqb", "tsq", "tqb_tsq_ratio"
+        "signal", "symbol", "company_name", "price", "change_pct"
     ]].copy()
     
     display_df.columns = [
-        "Signal", "Symbol", "Company Name", "TQB", "TSQ", "TQB/TSQ"
+        "Signal", "Symbol", "Company Name", "Price", "Change %"
     ]
     
-    # Format TQB/TSQ ratio
-    display_df["TQB/TSQ"] = display_df["TQB/TSQ"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "-")
+    # Format columns
+    display_df["Price"] = display_df["Price"].apply(lambda x: f"₹{x:,.2f}")
+    display_df["Change %"] = display_df["Change %"].apply(lambda x: f"{x:+.2f}%")
     
     # Apply color styling
     def style_signal(val):
@@ -1287,18 +1296,27 @@ def render_intraday_tab():
             return "background-color: #ef444420; color: #ef4444; font-weight: 600;"
         return ""
     
+    def style_change(val):
+        if "+" in val:
+            return "color: #00c853; font-weight: 600;"
+        elif "-" in val and val != "-":
+            return "color: #ef4444; font-weight: 600;"
+        return ""
+    
     # Display as styled dataframe
     try:
         # Try new pandas API (2.1+)
         st.dataframe(
-            display_df.style.map(style_signal, subset=["Signal"]),
+            display_df.style.map(style_signal, subset=["Signal"])
+                            .map(style_change, subset=["Change %"]),
             use_container_width=True,
             height=600
         )
     except AttributeError:
         # Fall back to old pandas API
         st.dataframe(
-            display_df.style.applymap(style_signal, subset=["Signal"]),
+            display_df.style.applymap(style_signal, subset=["Signal"])
+                            .applymap(style_change, subset=["Change %"]),
             use_container_width=True,
             height=600
         )
