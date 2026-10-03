@@ -24,6 +24,42 @@ from services.instruments import get_nifty200_symbols
 from services.market_data import get_quotes, parse_quote
 
 
+def _aggregate_to_10min(df_1min: pd.DataFrame) -> pd.DataFrame:
+    """
+    Aggregate 1-minute candles to 10-minute candles
+    
+    Args:
+        df_1min: DataFrame with 1-minute OHLCV data
+    
+    Returns:
+        DataFrame with 10-minute OHLCV data
+    """
+    if df_1min.empty:
+        return pd.DataFrame()
+    
+    # Ensure datetime is the index
+    df = df_1min.copy()
+    df['datetime'] = pd.to_datetime(df['datetime'])
+    df = df.set_index('datetime')
+    
+    # Aggregate to 10-minute candles
+    df_10min = df.resample('10min').agg({
+        'open': 'first',
+        'high': 'max',
+        'low': 'min',
+        'close': 'last',
+        'volume': 'sum'
+    })
+    
+    # Remove empty candles (where all values are NaN)
+    df_10min = df_10min.dropna(subset=['open', 'close'])
+    
+    # Reset index to get datetime as column
+    df_10min = df_10min.reset_index()
+    
+    return df_10min
+
+
 def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate Heikin-Ashi candles"""
     ha_df = df.copy()
@@ -274,22 +310,33 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore) -> dict | None:
         ikey = row.get("instrument_key", "")
         
         try:
-            # Import the correct function for intraday data
+            # Get 1-minute intraday data and aggregate to 10-minute
             from services.market_data import get_intraday_df
             
-            # Get 10-minute intraday data
-            df = await get_intraday_df(ikey, interval="10minute")
+            # Get 1-minute data (Upstox supports this)
+            df_1min = await get_intraday_df(ikey, interval="1minute")
             
             # Log data availability for first few stocks
             if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
-                logger.info(f"{symbol}: Got {len(df)} 10-minute candles")
+                logger.info(f"{symbol}: Got {len(df_1min)} 1-minute candles")
+            
+            if df_1min.empty:
+                if symbol in ['RELIANCE', 'TCS', 'INFY']:
+                    logger.warning(f"{symbol}: No 1-minute data available")
+                return None
+            
+            # Aggregate to 10-minute candles
+            df = _aggregate_to_10min(df_1min)
+            
+            if symbol in ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK']:
+                logger.info(f"{symbol}: Aggregated to {len(df)} 10-minute candles")
                 if not df.empty:
-                    logger.info(f"   Columns: {df.columns.tolist()}")
+                    logger.info(f"   Date range: {df['datetime'].min()} to {df['datetime'].max()}")
                     logger.info(f"   Last candle: {df.iloc[-1].to_dict()}")
             
             if df.empty or len(df) < 20:
                 if symbol in ['RELIANCE', 'TCS', 'INFY']:
-                    logger.warning(f"{symbol}: Insufficient data - {len(df)} candles (need 20+)")
+                    logger.warning(f"{symbol}: Insufficient 10-min data - {len(df)} candles (need 20+)")
                 return None
             
             result = _analyse_stock(
