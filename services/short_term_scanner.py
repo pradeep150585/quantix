@@ -3,7 +3,9 @@ Intraday Scanner - 10-minute Heikin-Ashi + EMA Strategy
 
 Works in two modes:
 1. Market Hours: Uses live 1-minute data aggregated to 10-minute (starts after 2 candles = 9:35 AM)
-2. Market Closed: Uses EOD historical data as 10-minute proxy for backtesting/analysis
+2. Market Closed: Uses historical 1-minute data from last trading day, aggregated to 10-minute
+
+Both modes use the EXACT same 10-minute candle structure for accurate signals.
 
 Sell Conditions:
 1. Previous 10-min candle: HA open > 10-min EMA of HA close
@@ -81,28 +83,6 @@ def _aggregate_to_10min(df_1min: pd.DataFrame) -> pd.DataFrame:
     df_10min = df_10min.reset_index()
     
     return df_10min
-
-
-def _use_daily_as_10min(df_daily: pd.DataFrame) -> pd.DataFrame:
-    """
-    Use daily candles as 10-minute proxy when market is closed
-    This allows backtesting and analysis with EOD data
-    
-    Args:
-        df_daily: DataFrame with daily OHLCV data
-    
-    Returns:
-        DataFrame with same structure (treating each day as a "10-min" candle)
-    """
-    if df_daily.empty:
-        return pd.DataFrame()
-    
-    # Simply return daily data - conditions will work the same way
-    # Just treating each daily candle as if it were a 10-min candle
-    df = df_daily.copy()
-    df['datetime'] = pd.to_datetime(df['datetime'])
-    
-    return df
 
 
 def _calculate_heikin_ashi(df: pd.DataFrame) -> pd.DataFrame:
@@ -359,15 +339,65 @@ async def _process_stock(row: pd.Series, sem: asyncio.Semaphore, is_market_open:
                     return None
                     
             else:
-                # Market is closed: Use EOD historical data (daily candles as proxy)
-                from services.market_data import get_historical_df
+                # Market is closed: Use 1-minute historical data from last completed day
+                # and aggregate to 10-minute (same as Chartink does)
+                from datetime import timedelta
+                from api.upstox_client import get_client
                 
-                # Get last 30 days of daily data
-                df = await get_historical_df(ikey, interval="day", days=30)
+                # Get last trading day (try yesterday first, then go back up to 5 days to skip weekends/holidays)
+                today = datetime.now()
+                client = get_client()
+                df_1min = pd.DataFrame()
                 
-                if symbol in ['RELIANCE', 'TCS', 'INFY']:
-                    logger.info(f"{symbol}: Got {len(df)} daily candles (EOD mode)")
+                for days_back in range(1, 6):  # Try last 5 days
+                    test_date = today - timedelta(days=days_back)
+                    
+                    # Skip weekends
+                    if test_date.weekday() >= 5:
+                        continue
+                    
+                    test_date_str = test_date.strftime('%Y-%m-%d')
+                    
+                    try:
+                        result = await client.get_historical_candles(
+                            instrument_key=ikey,
+                            interval="1minute",
+                            from_date=test_date_str,
+                            to_date=test_date_str
+                        )
+                        
+                        if result and result.get("status") == "success":
+                            candles = result.get("data", {}).get("candles", [])
+                            if candles:
+                                # Found data for this date
+                                df_1min = pd.DataFrame(
+                                    candles, 
+                                    columns=["datetime", "open", "high", "low", "close", "volume", "oi"]
+                                )
+                                df_1min["datetime"] = pd.to_datetime(df_1min["datetime"])
+                                df_1min = df_1min.sort_values("datetime").reset_index(drop=True)
+                                for col in ["open", "high", "low", "close", "volume"]:
+                                    df_1min[col] = pd.to_numeric(df_1min[col], errors="coerce")
+                                
+                                if symbol in ['RELIANCE', 'TCS', 'INFY', 'GAIL', 'ADANIGREEN']:
+                                    logger.info(f"{symbol}: Got {len(df_1min)} 1-minute historical candles for {test_date_str} (EOD mode)")
+                                
+                                break  # Found data, stop searching
+                    except Exception as e:
+                        if symbol in ['RELIANCE', 'TCS']:
+                            logger.debug(f"{symbol}: No data for {test_date_str}: {e}")
+                        continue
                 
+                if df_1min.empty:
+                    return None
+                
+                # Aggregate to 10-minute (same as live mode)
+                df = _aggregate_to_10min(df_1min)
+                
+                if symbol in ['RELIANCE', 'TCS', 'INFY', 'GAIL', 'ADANIGREEN']:
+                    logger.info(f"{symbol}: Aggregated to {len(df)} 10-minute candles (EOD mode)")
+                
+                # Need at least 20 candles for EMA calculation
                 if df.empty or len(df) < 20:
                     return None
             

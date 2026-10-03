@@ -2503,3 +2503,630 @@
 2026-08-21 23:03:17.064 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9670 NSE EQ instruments from Upstox master
 2026-08-21 23:03:19.407 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
 2026-08-21 23:04:10.227 | INFO     | services.elder_scanner:run_elder_scan:436 - Elder scan: 87 setups from 200 stocks
+2026-08-22 10:20:40.323 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-08-22 10:23:38.297 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 10:23:40.474 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 10:23:40.711 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-08-22 10:23:40.816 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/ltp: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-08-22 10:24:21.286 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE749A01030/day/2026-08-22/2026-08-21: ConnectTimeout: 
+2026-08-22 10:24:21.352 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE797F01020/day/2026-08-22/2026-08-21: ConnectTimeout: 
+2026-08-22 10:24:21.389 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE04I401011/day/2026-08-22/2026-08-21: ConnectTimeout: 
+2026-08-22 10:24:21.413 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE878B01027/day/2026-08-22/2026-08-21: ConnectTimeout: 
+2026-08-22 10:24:21.448 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE758E01017/day/2026-08-22/2026-08-21: ConnectTimeout: 
+2026-08-22 10:24:54.925 | INFO     | services.elder_scanner:run_elder_scan:436 - Elder scan: 92 setups from 200 stocks
+2026-08-22 10:25:15.051 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/ohlc: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-08-22 10:25:15.054 | INFO     | services.sepa_scanner:run_sepa_scan:583 - SEPA scan: prefetched 0 today's candles
+2026-08-22 16:07:32.248 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 16:07:34.895 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 16:08:14.094 | INFO     | services.elder_scanner:run_elder_scan:436 - Elder scan: 91 setups from 200 stocks
+2026-08-22 16:08:57.757 | INFO     | services.sepa_scanner:run_sepa_scan:595 - SEPA scan: prefetched 199 today's candles
+2026-08-22 16:08:57.859 | INFO     | services.sepa_scanner:_process_stock:573 - 360ONE: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:57.908 | INFO     | services.sepa_scanner:_process_stock:573 - ABB: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:57.942 | INFO     | services.sepa_scanner:_process_stock:573 - APLAPOLLO: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:57.992 | INFO     | services.sepa_scanner:_process_stock:573 - AUBANK: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.008 | INFO     | services.sepa_scanner:_process_stock:573 - ADANIENSOL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.025 | INFO     | services.sepa_scanner:_process_stock:573 - ADANIENT: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.042 | INFO     | services.sepa_scanner:_process_stock:573 - ADANIGREEN: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.061 | INFO     | services.sepa_scanner:_process_stock:573 - ADANIPORTS: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.077 | INFO     | services.sepa_scanner:_process_stock:573 - ADANIPOWER: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.094 | INFO     | services.sepa_scanner:_process_stock:573 - ATGL: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.112 | INFO     | services.sepa_scanner:_process_stock:573 - ABCAPITAL: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.128 | INFO     | services.sepa_scanner:_process_stock:573 - ALKEM: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.158 | INFO     | services.sepa_scanner:_process_stock:573 - AMBUJACEM: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.175 | INFO     | services.sepa_scanner:_process_stock:573 - APOLLOHOSP: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.194 | INFO     | services.sepa_scanner:_process_stock:573 - ASHOKLEY: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.211 | INFO     | services.sepa_scanner:_process_stock:573 - ASIANPAINT: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.228 | INFO     | services.sepa_scanner:_process_stock:573 - ASTRAL: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.245 | INFO     | services.sepa_scanner:_process_stock:573 - AUROPHARMA: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.258 | INFO     | services.sepa_scanner:_process_stock:573 - DMART: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.275 | INFO     | services.sepa_scanner:_process_stock:573 - AXISBANK: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.292 | INFO     | services.sepa_scanner:_process_stock:573 - BSE: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:08:58.311 | INFO     | services.sepa_scanner:_process_stock:573 - BAJAJ-AUTO: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.341 | INFO     | services.sepa_scanner:_process_stock:573 - BAJFINANCE: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.361 | INFO     | services.sepa_scanner:_process_stock:573 - BAJAJFINSV: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.375 | INFO     | services.sepa_scanner:_process_stock:573 - BAJAJHLDNG: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.408 | INFO     | services.sepa_scanner:_process_stock:573 - BANKBARODA: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.427 | INFO     | services.sepa_scanner:_process_stock:573 - BANKINDIA: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.444 | INFO     | services.sepa_scanner:_process_stock:573 - BDL: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.461 | INFO     | services.sepa_scanner:_process_stock:573 - BEL: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.477 | INFO     | services.sepa_scanner:_process_stock:573 - BHARATFORG: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.492 | INFO     | services.sepa_scanner:_process_stock:573 - BHEL: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.509 | INFO     | services.sepa_scanner:_process_stock:573 - BPCL: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.525 | INFO     | services.sepa_scanner:_process_stock:573 - BHARTIARTL: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.544 | INFO     | services.sepa_scanner:_process_stock:573 - GROWW: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.561 | INFO     | services.sepa_scanner:_process_stock:573 - BIOCON: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.591 | INFO     | services.sepa_scanner:_process_stock:573 - BLUESTARCO: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:08:58.608 | INFO     | services.sepa_scanner:_process_stock:573 - BOSCHLTD: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.625 | INFO     | services.sepa_scanner:_process_stock:573 - BRITANNIA: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.641 | INFO     | services.sepa_scanner:_process_stock:573 - CGPOWER: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.658 | INFO     | services.sepa_scanner:_process_stock:573 - CANBK: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.675 | INFO     | services.sepa_scanner:_process_stock:573 - CHOLAFIN: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.692 | INFO     | services.sepa_scanner:_process_stock:573 - CIPLA: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.709 | INFO     | services.sepa_scanner:_process_stock:573 - COALINDIA: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.725 | INFO     | services.sepa_scanner:_process_stock:573 - COCHINSHIP: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.742 | INFO     | services.sepa_scanner:_process_stock:573 - COFORGE: Score 49, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.758 | INFO     | services.sepa_scanner:_process_stock:573 - COLPAL: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.775 | INFO     | services.sepa_scanner:_process_stock:573 - CONCOR: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.808 | INFO     | services.sepa_scanner:_process_stock:573 - COROMANDEL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.825 | INFO     | services.sepa_scanner:_process_stock:573 - CUMMINSIND: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.841 | INFO     | services.sepa_scanner:_process_stock:573 - DLF: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.858 | INFO     | services.sepa_scanner:_process_stock:573 - DABUR: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.875 | INFO     | services.sepa_scanner:_process_stock:573 - DIVISLAB: Score 50, Grade Qualified, Signal NO TRADE
+2026-08-22 16:08:58.892 | INFO     | services.sepa_scanner:_process_stock:573 - DIXON: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.909 | INFO     | services.sepa_scanner:_process_stock:573 - DRREDDY: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.925 | INFO     | services.sepa_scanner:_process_stock:573 - EICHERMOT: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.942 | INFO     | services.sepa_scanner:_process_stock:573 - ETERNAL: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.958 | INFO     | services.sepa_scanner:_process_stock:573 - EXIDEIND: Score 49, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.975 | INFO     | services.sepa_scanner:_process_stock:573 - NYKAA: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:58.993 | INFO     | services.sepa_scanner:_process_stock:573 - FEDERALBNK: Score 51, Grade Qualified, Signal NO TRADE
+2026-08-22 16:08:59.009 | INFO     | services.sepa_scanner:_process_stock:573 - FORTIS: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.025 | INFO     | services.sepa_scanner:_process_stock:573 - GAIL: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.057 | INFO     | services.sepa_scanner:_process_stock:573 - GVT&D: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:08:59.078 | INFO     | services.sepa_scanner:_process_stock:573 - GMRAIRPORT: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.094 | INFO     | services.sepa_scanner:_process_stock:573 - GLENMARK: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.111 | INFO     | services.sepa_scanner:_process_stock:573 - GODFRYPHLP: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.128 | INFO     | services.sepa_scanner:_process_stock:573 - GODREJCP: Score 38, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:08:59.142 | INFO     | services.sepa_scanner:_process_stock:573 - GODREJPROP: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.158 | INFO     | services.sepa_scanner:_process_stock:573 - GRASIM: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.175 | INFO     | services.sepa_scanner:_process_stock:573 - HCLTECH: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.194 | INFO     | services.sepa_scanner:_process_stock:573 - HDFCAMC: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.228 | INFO     | services.sepa_scanner:_process_stock:573 - HDFCBANK: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.245 | INFO     | services.sepa_scanner:_process_stock:573 - HDFCLIFE: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.275 | INFO     | services.sepa_scanner:_process_stock:573 - HAVELLS: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.292 | INFO     | services.sepa_scanner:_process_stock:573 - HEROMOTOCO: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.328 | INFO     | services.sepa_scanner:_process_stock:573 - HINDALCO: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.345 | INFO     | services.sepa_scanner:_process_stock:573 - HAL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.375 | INFO     | services.sepa_scanner:_process_stock:573 - HINDPETRO: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.391 | INFO     | services.sepa_scanner:_process_stock:573 - HINDUNILVR: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.408 | INFO     | services.sepa_scanner:_process_stock:573 - HINDZINC: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.428 | INFO     | services.sepa_scanner:_process_stock:573 - POWERINDIA: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.445 | INFO     | services.sepa_scanner:_process_stock:573 - HUDCO: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.462 | INFO     | services.sepa_scanner:_process_stock:573 - HYUNDAI: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.492 | INFO     | services.sepa_scanner:_process_stock:573 - ICICIBANK: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.508 | INFO     | services.sepa_scanner:_process_stock:573 - ICICIGI: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.525 | INFO     | services.sepa_scanner:_process_stock:573 - ICICIAMC: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.544 | INFO     | services.sepa_scanner:_process_stock:573 - IDFCFIRSTB: Score 48, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.561 | INFO     | services.sepa_scanner:_process_stock:573 - ITC: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.578 | INFO     | services.sepa_scanner:_process_stock:573 - INDIANB: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.594 | INFO     | services.sepa_scanner:_process_stock:573 - INDHOTEL: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.609 | INFO     | services.sepa_scanner:_process_stock:573 - IOC: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.625 | INFO     | services.sepa_scanner:_process_stock:573 - IRCTC: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.642 | INFO     | services.sepa_scanner:_process_stock:573 - IRFC: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.659 | INFO     | services.sepa_scanner:_process_stock:573 - IREDA: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.676 | INFO     | services.sepa_scanner:_process_stock:573 - INDUSTOWER: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.708 | INFO     | services.sepa_scanner:_process_stock:573 - INDUSINDBK: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.725 | INFO     | services.sepa_scanner:_process_stock:573 - NAUKRI: Score 49, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.741 | INFO     | services.sepa_scanner:_process_stock:573 - INFY: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.775 | INFO     | services.sepa_scanner:_process_stock:573 - INDIGO: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.791 | INFO     | services.sepa_scanner:_process_stock:573 - JSWENERGY: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.825 | INFO     | services.sepa_scanner:_process_stock:573 - JSWSTEEL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.841 | INFO     | services.sepa_scanner:_process_stock:573 - JINDALSTEL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.858 | INFO     | services.sepa_scanner:_process_stock:573 - JIOFIN: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.891 | INFO     | services.sepa_scanner:_process_stock:573 - JUBLFOOD: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.909 | INFO     | services.sepa_scanner:_process_stock:573 - KEI: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.925 | INFO     | services.sepa_scanner:_process_stock:573 - KPITTECH: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.958 | INFO     | services.sepa_scanner:_process_stock:573 - KALYANKJIL: Score 52, Grade Qualified, Signal NO TRADE
+2026-08-22 16:08:59.975 | INFO     | services.sepa_scanner:_process_stock:573 - KOTAKBANK: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:08:59.991 | INFO     | services.sepa_scanner:_process_stock:573 - LTF: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.025 | INFO     | services.sepa_scanner:_process_stock:573 - LGEINDIA: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.041 | INFO     | services.sepa_scanner:_process_stock:573 - LICHSGFIN: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.061 | INFO     | services.sepa_scanner:_process_stock:573 - LTM: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.078 | INFO     | services.sepa_scanner:_process_stock:573 - LT: Score 53, Grade Qualified, Signal NO TRADE
+2026-08-22 16:09:00.111 | INFO     | services.sepa_scanner:_process_stock:573 - LAURUSLABS: Score 50, Grade Qualified, Signal NO TRADE
+2026-08-22 16:09:00.127 | INFO     | services.sepa_scanner:_process_stock:573 - LENSKART: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.142 | INFO     | services.sepa_scanner:_process_stock:573 - LODHA: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.159 | INFO     | services.sepa_scanner:_process_stock:573 - LUPIN: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.175 | INFO     | services.sepa_scanner:_process_stock:573 - MRF: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.194 | INFO     | services.sepa_scanner:_process_stock:573 - M&MFIN: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.344 | INFO     | services.sepa_scanner:_process_stock:573 - M&M: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.361 | INFO     | services.sepa_scanner:_process_stock:573 - MANKIND: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.375 | INFO     | services.sepa_scanner:_process_stock:573 - MARICO: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.391 | INFO     | services.sepa_scanner:_process_stock:573 - MARUTI: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.408 | INFO     | services.sepa_scanner:_process_stock:573 - MFSL: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.427 | INFO     | services.sepa_scanner:_process_stock:573 - MAXHEALTH: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.445 | INFO     | services.sepa_scanner:_process_stock:573 - MAZDOCK: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.461 | INFO     | services.sepa_scanner:_process_stock:573 - MOTILALOFS: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.492 | INFO     | services.sepa_scanner:_process_stock:573 - MPHASIS: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.509 | INFO     | services.sepa_scanner:_process_stock:573 - MCX: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.525 | INFO     | services.sepa_scanner:_process_stock:573 - MUTHOOTFIN: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.544 | INFO     | services.sepa_scanner:_process_stock:573 - NHPC: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.561 | INFO     | services.sepa_scanner:_process_stock:573 - NMDC: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.578 | INFO     | services.sepa_scanner:_process_stock:573 - NTPC: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.594 | INFO     | services.sepa_scanner:_process_stock:573 - NATIONALUM: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.608 | INFO     | services.sepa_scanner:_process_stock:573 - NESTLEIND: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.625 | INFO     | services.sepa_scanner:_process_stock:573 - OBEROIRLTY: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.642 | INFO     | services.sepa_scanner:_process_stock:573 - ONGC: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.659 | INFO     | services.sepa_scanner:_process_stock:573 - OIL: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.675 | INFO     | services.sepa_scanner:_process_stock:573 - PAYTM: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.708 | INFO     | services.sepa_scanner:_process_stock:573 - OFSS: Score 49, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.723 | INFO     | services.sepa_scanner:_process_stock:573 - POLICYBZR: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:09:00.741 | INFO     | services.sepa_scanner:_process_stock:573 - PIIND: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:09:00.759 | INFO     | services.sepa_scanner:_process_stock:573 - PAGEIND: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:09:00.775 | INFO     | services.sepa_scanner:_process_stock:573 - PATANJALI: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.792 | INFO     | services.sepa_scanner:_process_stock:573 - PERSISTENT: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.808 | INFO     | services.sepa_scanner:_process_stock:573 - PHOENIXLTD: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.825 | INFO     | services.sepa_scanner:_process_stock:573 - PIDILITIND: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.841 | INFO     | services.sepa_scanner:_process_stock:573 - POLYCAB: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.858 | INFO     | services.sepa_scanner:_process_stock:573 - PFC: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:09:00.875 | INFO     | services.sepa_scanner:_process_stock:573 - POWERGRID: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.891 | INFO     | services.sepa_scanner:_process_stock:573 - PREMIERENE: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.924 | INFO     | services.sepa_scanner:_process_stock:573 - PRESTIGE: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.941 | INFO     | services.sepa_scanner:_process_stock:573 - PNB: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.958 | INFO     | services.sepa_scanner:_process_stock:573 - RECLTD: Score 39, Grade Not Ready, Signal NO TRADE
+2026-08-22 16:09:00.975 | INFO     | services.sepa_scanner:_process_stock:573 - RADICO: Score 49, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:00.991 | INFO     | services.sepa_scanner:_process_stock:573 - RVNL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.008 | INFO     | services.sepa_scanner:_process_stock:573 - RELIANCE: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.025 | INFO     | services.sepa_scanner:_process_stock:573 - SBICARD: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.041 | INFO     | services.sepa_scanner:_process_stock:573 - SBILIFE: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.061 | INFO     | services.sepa_scanner:_process_stock:573 - SRF: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.127 | INFO     | services.sepa_scanner:_process_stock:573 - SHREECEM: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.141 | INFO     | services.sepa_scanner:_process_stock:573 - SHRIRAMFIN: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.174 | INFO     | services.sepa_scanner:_process_stock:573 - ENRIN: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.191 | INFO     | services.sepa_scanner:_process_stock:573 - SIEMENS: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.211 | INFO     | services.sepa_scanner:_process_stock:573 - SOLARINDS: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.228 | INFO     | services.sepa_scanner:_process_stock:573 - SBIN: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.244 | INFO     | services.sepa_scanner:_process_stock:573 - SAIL: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.258 | INFO     | services.sepa_scanner:_process_stock:573 - SUNPHARMA: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.275 | INFO     | services.sepa_scanner:_process_stock:573 - SUPREMEIND: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.292 | INFO     | services.sepa_scanner:_process_stock:573 - SUZLON: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.311 | INFO     | services.sepa_scanner:_process_stock:573 - SWIGGY: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.328 | INFO     | services.sepa_scanner:_process_stock:573 - TVSMOTOR: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.345 | INFO     | services.sepa_scanner:_process_stock:573 - TATACAP: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.375 | INFO     | services.sepa_scanner:_process_stock:573 - TATACOMM: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.392 | INFO     | services.sepa_scanner:_process_stock:573 - TCS: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.408 | INFO     | services.sepa_scanner:_process_stock:573 - TATACONSUM: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.427 | INFO     | services.sepa_scanner:_process_stock:573 - TATAELXSI: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.444 | INFO     | services.sepa_scanner:_process_stock:573 - TATAINVEST: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.461 | INFO     | services.sepa_scanner:_process_stock:573 - TMCV: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.477 | INFO     | services.sepa_scanner:_process_stock:573 - TMPV: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.492 | INFO     | services.sepa_scanner:_process_stock:573 - TATAPOWER: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.508 | INFO     | services.sepa_scanner:_process_stock:573 - TATASTEEL: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.525 | INFO     | services.sepa_scanner:_process_stock:573 - TECHM: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.545 | INFO     | services.sepa_scanner:_process_stock:573 - TITAN: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.561 | INFO     | services.sepa_scanner:_process_stock:573 - TORNTPHARM: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.594 | INFO     | services.sepa_scanner:_process_stock:573 - TRENT: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.608 | INFO     | services.sepa_scanner:_process_stock:573 - TIINDIA: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.625 | INFO     | services.sepa_scanner:_process_stock:573 - UPL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.642 | INFO     | services.sepa_scanner:_process_stock:573 - ULTRACEMCO: Score 43, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.658 | INFO     | services.sepa_scanner:_process_stock:573 - UNIONBANK: Score 45, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.675 | INFO     | services.sepa_scanner:_process_stock:573 - UNITDSPR: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.692 | INFO     | services.sepa_scanner:_process_stock:573 - VBL: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.708 | INFO     | services.sepa_scanner:_process_stock:573 - VEDL: Score 42, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.725 | INFO     | services.sepa_scanner:_process_stock:573 - VMM: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.742 | INFO     | services.sepa_scanner:_process_stock:573 - IDEA: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.759 | INFO     | services.sepa_scanner:_process_stock:573 - VOLTAS: Score 40, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.791 | INFO     | services.sepa_scanner:_process_stock:573 - WAAREEENER: Score 46, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.808 | INFO     | services.sepa_scanner:_process_stock:573 - WIPRO: Score 44, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.825 | INFO     | services.sepa_scanner:_process_stock:573 - YESBANK: Score 47, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:01.842 | INFO     | services.sepa_scanner:_process_stock:573 - ZYDUSLIFE: Score 41, Grade Watchlist, Signal NO TRADE
+2026-08-22 16:09:02.124 | INFO     | services.sepa_scanner:run_sepa_scan:616 - SEPA scan: 199 stocks analyzed
+2026-08-22 16:48:30.998 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 16:48:33.348 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 16:49:13.430 | INFO     | services.elder_scanner:run_elder_scan:447 - Elder Triple Screen: 10 top stocks from 91 setups analyzed
+2026-08-22 16:49:20.170 | INFO     | services.sepa_scanner:run_sepa_scan:529 - Starting Minervini SEPA scan...
+2026-08-22 16:49:45.646 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: prefetched 199 today's candles
+2026-08-22 16:49:48.647 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 199 stocks analyzed
+2026-08-22 16:49:48.682 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 199 analyzed
+2026-08-22 16:49:48.778 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-22 16:50:14.548 | INFO     | services.swing_scanner:run_swing_scan:602 - Swing scan: prefetched 199 today's candles
+2026-08-22 16:50:17.843 | INFO     | services.swing_scanner:run_swing_scan:611 - Swing scan: 20 stocks analyzed
+2026-08-22 16:50:17.860 | INFO     | services.swing_scanner:run_swing_scan:623 - Swing scan: Returning top 10 stocks out of 20 analyzed
+2026-08-22 17:11:23.984 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 17:11:26.235 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 17:12:08.316 | INFO     | services.elder_scanner:run_elder_scan:447 - Elder Triple Screen: 10 top stocks from 91 setups analyzed
+2026-08-22 17:12:14.765 | INFO     | services.sepa_scanner:run_sepa_scan:529 - Starting Minervini SEPA scan...
+2026-08-22 17:12:38.795 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: prefetched 199 today's candles
+2026-08-22 17:12:41.872 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 199 stocks analyzed
+2026-08-22 17:12:41.887 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 199 analyzed
+2026-08-22 17:12:41.953 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-22 17:13:08.552 | INFO     | services.swing_scanner:run_swing_scan:602 - Swing scan: prefetched 199 today's candles
+2026-08-22 17:13:11.957 | INFO     | services.swing_scanner:run_swing_scan:611 - Swing scan: 20 stocks analyzed
+2026-08-22 17:13:11.972 | INFO     | services.swing_scanner:run_swing_scan:623 - Swing scan: Returning top 10 stocks out of 20 analyzed
+2026-08-22 17:56:53.805 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 17:56:55.955 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 17:57:46.052 | INFO     | services.elder_scanner:run_elder_scan:447 - Elder Triple Screen: 10 top stocks from 91 setups analyzed
+2026-08-22 17:57:54.293 | INFO     | services.sepa_scanner:run_sepa_scan:529 - Starting Minervini SEPA scan...
+2026-08-22 17:58:21.635 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: prefetched 199 today's candles
+2026-08-22 17:58:25.469 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 199 stocks analyzed
+2026-08-22 17:58:25.484 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 199 analyzed
+2026-08-22 17:58:26.800 | INFO     | services.sepa_scanner:run_sepa_scan:573 - SEPA scan: Fetched charts for 10/10 stocks
+2026-08-22 17:58:29.929 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-22 17:58:57.683 | INFO     | services.swing_scanner:run_swing_scan:602 - Swing scan: prefetched 199 today's candles
+2026-08-22 17:59:02.676 | INFO     | services.swing_scanner:run_swing_scan:611 - Swing scan: 20 stocks analyzed
+2026-08-22 17:59:02.683 | INFO     | services.swing_scanner:run_swing_scan:623 - Swing scan: Returning top 10 stocks out of 20 analyzed
+2026-08-22 17:59:03.765 | INFO     | services.swing_scanner:run_swing_scan:637 - Swing scan: Fetched charts for 10/10 stocks
+2026-08-22 18:04:13.251 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 18:04:15.734 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 18:04:54.917 | INFO     | services.elder_scanner:run_elder_scan:447 - Elder Triple Screen: 10 top stocks from 91 setups analyzed
+2026-08-22 18:05:01.898 | INFO     | services.sepa_scanner:run_sepa_scan:529 - Starting Minervini SEPA scan...
+2026-08-22 18:05:30.181 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: prefetched 199 today's candles
+2026-08-22 18:05:32.818 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 199 stocks analyzed
+2026-08-22 18:05:32.836 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 199 analyzed
+2026-08-22 18:05:33.918 | INFO     | services.sepa_scanner:run_sepa_scan:573 - SEPA scan: Fetched charts for 10/10 stocks
+2026-08-22 18:05:36.088 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-22 18:06:01.966 | INFO     | services.swing_scanner:run_swing_scan:602 - Swing scan: prefetched 199 today's candles
+2026-08-22 18:06:05.179 | INFO     | services.swing_scanner:run_swing_scan:611 - Swing scan: 20 stocks analyzed
+2026-08-22 18:06:05.179 | INFO     | services.swing_scanner:run_swing_scan:623 - Swing scan: Returning top 10 stocks out of 20 analyzed
+2026-08-22 18:06:06.213 | INFO     | services.swing_scanner:run_swing_scan:637 - Swing scan: Fetched charts for 10/10 stocks
+2026-08-22 18:07:39.225 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-22 18:07:41.659 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-22 18:09:03.064 | INFO     | services.elder_scanner:run_elder_scan:447 - Elder Triple Screen: 10 top stocks from 91 setups analyzed
+2026-08-22 18:09:12.170 | INFO     | services.sepa_scanner:run_sepa_scan:529 - Starting Minervini SEPA scan...
+2026-08-22 18:09:49.313 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: prefetched 199 today's candles
+2026-08-22 18:09:51.654 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 199 stocks analyzed
+2026-08-22 18:09:51.670 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 199 analyzed
+2026-08-22 18:09:52.873 | INFO     | services.sepa_scanner:run_sepa_scan:573 - SEPA scan: Fetched charts for 10/10 stocks
+2026-08-22 18:09:54.893 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-22 18:10:24.886 | INFO     | services.swing_scanner:run_swing_scan:602 - Swing scan: prefetched 199 today's candles
+2026-08-22 18:10:29.435 | INFO     | services.swing_scanner:run_swing_scan:611 - Swing scan: 20 stocks analyzed
+2026-08-22 18:10:29.443 | INFO     | services.swing_scanner:run_swing_scan:623 - Swing scan: Returning top 10 stocks out of 20 analyzed
+2026-08-22 18:10:30.625 | INFO     | services.swing_scanner:run_swing_scan:637 - Swing scan: Fetched charts for 10/10 stocks
+2026-08-23 12:22:04.240 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-08-23 12:23:55.235 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9687 NSE EQ instruments from Upstox master
+2026-08-23 12:23:57.768 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-23 12:25:05.938 | INFO     | services.elder_scanner:run_elder_scan:447 - Elder Triple Screen: 10 top stocks from 91 setups analyzed
+2026-08-23 12:25:19.297 | INFO     | services.sepa_scanner:run_sepa_scan:529 - Starting Minervini SEPA scan...
+2026-08-23 12:26:22.884 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: prefetched 199 today's candles
+2026-08-23 12:26:25.055 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 199 stocks analyzed
+2026-08-23 12:26:25.055 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 199 analyzed
+2026-08-23 12:26:26.273 | INFO     | services.sepa_scanner:run_sepa_scan:573 - SEPA scan: Fetched charts for 10/10 stocks
+2026-08-23 12:26:28.101 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-23 12:27:16.116 | INFO     | services.swing_scanner:run_swing_scan:602 - Swing scan: prefetched 199 today's candles
+2026-08-23 12:27:19.240 | INFO     | services.swing_scanner:run_swing_scan:611 - Swing scan: 20 stocks analyzed
+2026-08-23 12:27:19.240 | INFO     | services.swing_scanner:run_swing_scan:623 - Swing scan: Returning top 10 stocks out of 20 analyzed
+2026-08-23 12:27:20.739 | INFO     | services.swing_scanner:run_swing_scan:637 - Swing scan: Fetched charts for 10/10 stocks
+2026-08-23 12:30:33.935 | INFO     | news:fetch_news:246 - Fetched 22 unique news items (deduplicated by company)
+2026-08-29 09:45:20.616 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-08-29 09:46:36.296 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 09:46:38.563 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 09:46:59.011 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /historical-candle/NSE_EQ|INE466L01038/10minute/2026-08-29/2026-08-24: {"status":"error","errors":[{"errorCode":"UDAPI1020","message":"Interval accepts one of (1minute,30minute,day,week,month)","propertyPath":"getHistoricalCandleData.interval","invalidValue":"10minute","
+2026-08-29 09:48:03.692 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE758E01017/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.692 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE498L01015/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.710 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE878B01027/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.710 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE749A01030/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.726 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE303R01014/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.726 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE04I401011/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.742 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE797F01020/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:03.742 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE237A01036/week/2026-08-29/2024-09-28: ConnectError: 
+2026-08-29 09:48:36.825 | INFO     | services.elder_scanner:run_elder_scan:452 - Elder Triple Screen: 10 top stocks from 104 setups analyzed
+2026-08-29 09:48:50.056 | INFO     | services.sepa_scanner:run_sepa_scan:530 - Starting Minervini SEPA scan...
+2026-08-29 09:48:50.264 | INFO     | services.sepa_scanner:run_sepa_scan:538 - SEPA scan: fetched 800 live quotes
+2026-08-29 09:48:54.755 | INFO     | services.sepa_scanner:run_sepa_scan:547 - SEPA scan: 193 stocks analyzed
+2026-08-29 09:48:54.771 | INFO     | services.sepa_scanner:run_sepa_scan:559 - SEPA scan: Returning top 10 stocks out of 193 analyzed
+2026-08-29 09:48:57.905 | INFO     | services.sepa_scanner:run_sepa_scan:573 - SEPA scan: Fetched charts for 10/10 stocks
+2026-08-29 09:49:00.122 | INFO     | services.swing_scanner:run_swing_scan:593 - Starting Master Swing Trader scan...
+2026-08-29 09:49:00.347 | INFO     | services.swing_scanner:run_swing_scan:601 - Swing scan: fetched 800 live quotes
+2026-08-29 09:49:02.749 | INFO     | services.swing_scanner:run_swing_scan:610 - Swing scan: 7 stocks analyzed
+2026-08-29 09:49:02.765 | INFO     | services.swing_scanner:run_swing_scan:622 - Swing scan: Returning top 10 stocks out of 7 analyzed
+2026-08-29 09:49:05.138 | INFO     | services.swing_scanner:run_swing_scan:636 - Swing scan: Fetched charts for 7/7 stocks
+2026-08-29 10:34:10.114 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 10:34:12.380 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 10:34:35.161 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /historical-candle/NSE_EQ|INE466L01038/10minute/2026-08-29/2026-08-24: {"status":"error","errors":[{"errorCode":"UDAPI1020","message":"Interval accepts one of (1minute,30minute,day,week,month)","propertyPath":"getHistoricalCandleData.interval","invalidValue":"10minute","
+2026-08-29 10:35:34.826 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 10:35:39.116 | INFO     | services.sepa_scanner:run_sepa_scan:533 - Starting Minervini SEPA scan...
+2026-08-29 10:35:39.242 | INFO     | services.sepa_scanner:run_sepa_scan:541 - SEPA scan: fetched 800 live quotes
+2026-08-29 10:35:41.151 | INFO     | services.sepa_scanner:run_sepa_scan:550 - SEPA scan: 193 stocks analyzed
+2026-08-29 10:35:41.151 | INFO     | services.sepa_scanner:run_sepa_scan:562 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 10:35:42.710 | INFO     | services.sepa_scanner:run_sepa_scan:576 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 10:35:44.542 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 10:35:44.683 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 10:35:47.441 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 10:35:47.441 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 10:35:49.133 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 10:35:53.077 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 10:35:53.081 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 10:35:57.071 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 10:47:15.282 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 10:47:17.662 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 10:48:13.062 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 10:48:17.582 | INFO     | services.sepa_scanner:run_sepa_scan:533 - Starting Minervini SEPA scan...
+2026-08-29 10:48:17.727 | INFO     | services.sepa_scanner:run_sepa_scan:541 - SEPA scan: fetched 800 live quotes
+2026-08-29 10:48:20.082 | INFO     | services.sepa_scanner:run_sepa_scan:550 - SEPA scan: 193 stocks analyzed
+2026-08-29 10:48:20.082 | INFO     | services.sepa_scanner:run_sepa_scan:562 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 10:48:21.992 | INFO     | services.sepa_scanner:run_sepa_scan:576 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 10:48:24.202 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 10:48:24.366 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 10:48:26.922 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 10:48:26.932 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 10:48:28.582 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 10:48:33.432 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 10:48:33.442 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 10:48:35.582 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 11:00:28.773 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 11:00:32.572 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 11:01:41.003 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 11:01:44.984 | INFO     | services.sepa_scanner:run_sepa_scan:533 - Starting Minervini SEPA scan...
+2026-08-29 11:01:45.109 | INFO     | services.sepa_scanner:run_sepa_scan:541 - SEPA scan: fetched 800 live quotes
+2026-08-29 11:01:47.769 | INFO     | services.sepa_scanner:run_sepa_scan:550 - SEPA scan: 193 stocks analyzed
+2026-08-29 11:01:47.779 | INFO     | services.sepa_scanner:run_sepa_scan:562 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 11:01:49.449 | INFO     | services.sepa_scanner:run_sepa_scan:576 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 11:01:51.559 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 11:01:51.699 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 11:01:54.418 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 11:01:54.434 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 11:01:55.939 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 11:02:01.079 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 11:02:01.109 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 11:02:03.339 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 11:05:59.490 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 11:06:01.775 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 11:06:54.906 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 11:06:58.913 | INFO     | services.sepa_scanner:run_sepa_scan:533 - Starting Minervini SEPA scan...
+2026-08-29 11:06:59.138 | INFO     | services.sepa_scanner:run_sepa_scan:541 - SEPA scan: fetched 800 live quotes
+2026-08-29 11:07:01.107 | INFO     | services.sepa_scanner:run_sepa_scan:550 - SEPA scan: 193 stocks analyzed
+2026-08-29 11:07:01.123 | INFO     | services.sepa_scanner:run_sepa_scan:562 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 11:07:02.575 | INFO     | services.sepa_scanner:run_sepa_scan:576 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 11:07:04.196 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 11:07:04.388 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 11:07:06.936 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 11:07:06.952 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 11:07:08.420 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 11:07:12.254 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 11:07:12.262 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 11:07:13.645 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 11:20:30.817 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 11:20:33.067 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 11:21:26.984 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE669C01036/week/2026-08-29/2026-08-25: ReadError: 
+2026-08-29 11:21:28.625 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 11:21:34.102 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-08-29 11:21:34.241 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-08-29 11:21:37.681 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-08-29 11:21:37.689 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 11:21:39.201 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 11:21:41.112 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 11:21:41.301 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 11:21:44.342 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 11:21:44.352 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 11:21:46.332 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 11:21:50.832 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 11:21:50.852 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 11:21:58.052 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 11:30:16.154 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 11:30:18.479 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 11:31:06.869 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 11:31:11.955 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-08-29 11:31:12.104 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-08-29 11:31:14.759 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-08-29 11:31:14.759 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 11:31:16.149 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 11:31:17.899 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 11:31:18.049 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 11:31:20.710 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 11:31:20.724 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 11:31:23.744 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 11:31:27.193 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 11:31:27.204 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 11:31:28.564 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 11:37:37.891 | INFO     | config:load_config:26 - Loading config from Streamlit secrets
+2026-08-29 12:27:11.748 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 12:27:14.047 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 12:27:29.610 | ERROR    | api.upstox_client:get:80 - HTTP 400 for /historical-candle/NSE_EQ|INE466L01038/10minute/2026-08-29/2026-08-24: {"status":"error","errors":[{"errorCode":"UDAPI1020","message":"Interval accepts one of (1minute,30minute,day,week,month)","propertyPath":"getHistoricalCandleData.interval","invalidValue":"10minute","
+2026-08-29 12:31:14.436 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 12:31:16.618 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 12:31:45.035 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE797F01020/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:31:45.100 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE303R01014/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:31:45.201 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE237A01036/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:31:45.251 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE04I401011/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:31:45.302 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE758E01017/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:31:45.318 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE878B01027/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:31:45.435 | ERROR    | api.upstox_client:get:84 - Request failed for /historical-candle/NSE_EQ|INE749A01030/week/2026-08-29/2026-08-25: ConnectError: 
+2026-08-29 12:32:07.967 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 12:32:14.709 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-08-29 12:32:14.909 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-08-29 12:32:17.332 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-08-29 12:32:17.349 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 12:32:18.882 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 12:32:20.676 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 12:32:20.878 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 12:32:23.311 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 12:32:23.327 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 12:32:24.748 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 12:32:28.156 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 12:32:28.165 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 12:32:29.629 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-08-29 12:36:37.721 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9700 NSE EQ instruments from Upstox master
+2026-08-29 12:36:40.088 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-08-29 12:37:28.735 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 110 setups analyzed
+2026-08-29 12:37:32.888 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-08-29 12:37:33.056 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-08-29 12:37:35.373 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-08-29 12:37:35.373 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-08-29 12:37:36.919 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-08-29 12:37:38.731 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-08-29 12:37:38.902 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-08-29 12:37:41.534 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 12 stocks analyzed
+2026-08-29 12:37:41.534 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 12 analyzed
+2026-08-29 12:37:43.061 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-08-29 12:37:46.983 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-08-29 12:37:46.983 | INFO     | services.backtest:get_backtest_results:189 - Found 15 signals to backtest
+2026-08-29 12:37:48.435 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 15 signals analyzed
+2026-09-05 10:47:10.949 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-05 10:52:41.295 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9724 NSE EQ instruments from Upstox master
+2026-09-05 10:52:43.527 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-09-05 10:53:39.097 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 86 setups analyzed
+2026-09-05 10:53:48.796 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-09-05 10:53:49.062 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-09-05 10:53:52.729 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-09-05 10:53:52.746 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-09-05 10:53:54.371 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-09-05 10:53:56.287 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-09-05 10:53:56.442 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-09-05 10:53:59.133 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 17 stocks analyzed
+2026-09-05 10:53:59.149 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 17 analyzed
+2026-09-05 10:54:00.758 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-09-05 10:54:04.420 | INFO     | services.short_term_scanner:run_short_term_scan:278 - Starting Short Term scan...
+2026-09-05 10:55:03.193 | INFO     | services.short_term_scanner:run_short_term_scan:290 - Short term scan: 0 signals found
+2026-09-05 10:55:03.233 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-09-05 10:55:03.259 | INFO     | services.backtest:get_backtest_results:189 - Found 30 signals to backtest
+2026-09-05 10:55:05.928 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 30 signals analyzed
+2026-09-05 11:14:37.572 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9724 NSE EQ instruments from Upstox master
+2026-09-05 11:14:40.322 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-09-05 11:15:32.266 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 86 setups analyzed
+2026-09-05 11:15:36.476 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-09-05 11:15:36.610 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-09-05 11:15:38.669 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-09-05 11:15:38.684 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-09-05 11:15:40.293 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-09-05 11:15:41.785 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-09-05 11:15:41.926 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-09-05 11:15:44.314 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 17 stocks analyzed
+2026-09-05 11:15:44.330 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 17 analyzed
+2026-09-05 11:15:46.204 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-09-05 11:15:49.326 | INFO     | services.short_term_scanner:run_short_term_scan:278 - Starting Short Term scan...
+2026-09-05 11:16:04.847 | INFO     | services.short_term_scanner:run_short_term_scan:290 - Short term scan: 0 signals found
+2026-09-05 11:16:04.864 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-09-05 11:16:04.864 | INFO     | services.backtest:get_backtest_results:189 - Found 30 signals to backtest
+2026-09-05 11:16:07.204 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 30 signals analyzed
+2026-09-05 11:23:38.031 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9724 NSE EQ instruments from Upstox master
+2026-09-05 11:23:40.246 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-09-05 11:24:32.110 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 86 setups analyzed
+2026-09-05 11:24:36.321 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-09-05 11:24:36.619 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-09-05 11:24:39.151 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-09-05 11:24:39.167 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-09-05 11:24:41.093 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-09-05 11:24:43.607 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-09-05 11:24:43.744 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-09-05 11:24:46.412 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 17 stocks analyzed
+2026-09-05 11:24:46.427 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 17 analyzed
+2026-09-05 11:24:48.708 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-09-05 11:24:52.006 | INFO     | services.short_term_scanner:run_short_term_scan:315 - Starting Short Term scan...
+2026-09-05 11:24:57.843 | INFO     | services.short_term_scanner:_analyse_stock:236 - HDFCBANK - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': True, 'cond5_no_lower_wick': True, 'tolerance': 0.7075427307784558, 'open_low_diff': 0.0}
+2026-09-05 11:24:57.858 | INFO     | services.short_term_scanner:_analyse_stock:237 - HDFCBANK - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': False, 'cond5_no_upper_wick': False, 'tolerance': 0.7075427307784558, 'open_high_diff': 8.957269221544266}
+2026-09-05 11:24:59.926 | INFO     | services.short_term_scanner:_analyse_stock:236 - INFY - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': False, 'cond5_no_lower_wick': False, 'tolerance': 1.135596471631527, 'open_low_diff': 10.196471631526947}
+2026-09-05 11:24:59.926 | INFO     | services.short_term_scanner:_analyse_stock:237 - INFY - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': True, 'cond5_no_upper_wick': False, 'tolerance': 1.135596471631527, 'open_high_diff': 11.103528368473008}
+2026-09-05 11:25:00.176 | INFO     | services.short_term_scanner:_analyse_stock:236 - ICICIBANK - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': False, 'cond5_no_lower_wick': False, 'tolerance': 1.4345507860660556, 'open_low_diff': 13.150786066055389}
+2026-09-05 11:25:00.176 | INFO     | services.short_term_scanner:_analyse_stock:237 - ICICIBANK - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': True, 'cond5_no_upper_wick': False, 'tolerance': 1.4345507860660556, 'open_high_diff': 3.7492139339444748}
+2026-09-05 11:25:04.644 | INFO     | services.short_term_scanner:_analyse_stock:236 - RELIANCE - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': True, 'cond5_no_lower_wick': True, 'tolerance': 1.3039711995601655, 'open_low_diff': 0.0}
+2026-09-05 11:25:04.644 | INFO     | services.short_term_scanner:_analyse_stock:237 - RELIANCE - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': False, 'cond5_no_upper_wick': False, 'tolerance': 1.3039711995601655, 'open_high_diff': 29.02880043983464}
+2026-09-05 11:25:06.942 | INFO     | services.short_term_scanner:_analyse_stock:236 - TCS - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': False, 'cond5_no_lower_wick': False, 'tolerance': 2.3383039219141004, 'open_low_diff': 35.903921914100465}
+2026-09-05 11:25:06.942 | INFO     | services.short_term_scanner:_analyse_stock:237 - TCS - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': True, 'cond5_no_upper_wick': False, 'tolerance': 2.3383039219141004, 'open_high_diff': 25.596078085899535}
+2026-09-05 11:25:08.675 | INFO     | services.short_term_scanner:run_short_term_scan:327 - Short term scan: 0 signals found
+2026-09-05 11:25:08.692 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-09-05 11:25:08.692 | INFO     | services.backtest:get_backtest_results:189 - Found 30 signals to backtest
+2026-09-05 11:25:12.075 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 30 signals analyzed
+2026-09-05 11:31:05.027 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9724 NSE EQ instruments from Upstox master
+2026-09-05 11:31:07.327 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-09-05 11:31:53.574 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 86 setups analyzed
+2026-09-05 11:31:57.921 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-09-05 11:31:58.082 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 800 live quotes
+2026-09-05 11:32:00.623 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-09-05 11:32:00.640 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-09-05 11:32:01.958 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-09-05 11:32:03.559 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-09-05 11:32:03.697 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 800 live quotes
+2026-09-05 11:32:06.195 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 17 stocks analyzed
+2026-09-05 11:32:06.195 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 17 analyzed
+2026-09-05 11:32:07.600 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-09-05 11:32:10.604 | INFO     | services.short_term_scanner:run_short_term_scan:328 - Starting Short Term scan...
+2026-09-05 11:32:16.458 | INFO     | services.short_term_scanner:_analyse_stock:249 - HDFCBANK - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': True, 'cond5_small_lower_wick': True, 'lower_wick': 0.0, 'lower_wick_pct': 0.0, 'candle_range': 8.96}
+2026-09-05 11:32:16.458 | INFO     | services.short_term_scanner:_analyse_stock:250 - HDFCBANK - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': False, 'cond5_small_upper_wick': False, 'upper_wick': 8.96, 'upper_wick_pct': 100.0, 'candle_range': 8.96}
+2026-09-05 11:32:17.905 | INFO     | services.short_term_scanner:_analyse_stock:249 - ICICIBANK - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 13.15, 'lower_wick_pct': 77.82, 'candle_range': 16.9}
+2026-09-05 11:32:17.905 | INFO     | services.short_term_scanner:_analyse_stock:250 - ICICIBANK - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': False, 'upper_wick': 3.75, 'upper_wick_pct': 22.18, 'candle_range': 16.9}
+2026-09-05 11:32:18.224 | INFO     | services.short_term_scanner:_analyse_stock:249 - INFY - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 10.2, 'lower_wick_pct': 47.87, 'candle_range': 21.3}
+2026-09-05 11:32:18.224 | INFO     | services.short_term_scanner:_analyse_stock:250 - INFY - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': False, 'upper_wick': 11.1, 'upper_wick_pct': 52.13, 'candle_range': 21.3}
+2026-09-05 11:32:23.880 | INFO     | services.short_term_scanner:_analyse_stock:249 - RELIANCE - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': True, 'cond5_small_lower_wick': True, 'lower_wick': 0.0, 'lower_wick_pct': 0.0, 'candle_range': 29.03}
+2026-09-05 11:32:23.880 | INFO     | services.short_term_scanner:_analyse_stock:250 - RELIANCE - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': False, 'cond5_small_upper_wick': False, 'upper_wick': 29.03, 'upper_wick_pct': 100.0, 'candle_range': 29.03}
+2026-09-05 11:32:25.124 | INFO     | services.short_term_scanner:_analyse_stock:249 - TCS - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': True, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 35.9, 'lower_wick_pct': 58.38, 'candle_range': 61.5}
+2026-09-05 11:32:25.171 | INFO     | services.short_term_scanner:_analyse_stock:250 - TCS - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': False, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': False, 'upper_wick': 25.6, 'upper_wick_pct': 41.62, 'candle_range': 61.5}
+2026-09-05 11:32:27.221 | INFO     | services.short_term_scanner:run_short_term_scan:340 - Short term scan: 0 signals found
+2026-09-05 11:32:27.232 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-09-05 11:32:27.237 | INFO     | services.backtest:get_backtest_results:189 - Found 30 signals to backtest
+2026-09-05 11:32:29.690 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 30 signals analyzed
+2026-09-12 20:41:13.101 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:41:59.399 | INFO     | services.instruments:_get_upstox_instrument_master:73 - Loaded 9708 NSE EQ instruments from Upstox master
+2026-09-12 20:42:01.648 | INFO     | services.instruments:fetch_index_constituents:151 - Loaded 200 constituents for NIFTY 200
+2026-09-12 20:42:01.814 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:42:54.647 | INFO     | services.elder_scanner:run_elder_scan:476 - Elder Triple Screen: 5 top stocks from 59 setups analyzed
+2026-09-12 20:43:04.357 | INFO     | services.sepa_scanner:run_sepa_scan:537 - Starting Minervini SEPA scan...
+2026-09-12 20:43:04.606 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:43:04.606 | INFO     | services.sepa_scanner:run_sepa_scan:545 - SEPA scan: fetched 0 live quotes
+2026-09-12 20:43:07.227 | INFO     | services.sepa_scanner:run_sepa_scan:554 - SEPA scan: 193 stocks analyzed
+2026-09-12 20:43:07.235 | INFO     | services.sepa_scanner:run_sepa_scan:566 - SEPA scan: Returning top 5 stocks out of 193 analyzed
+2026-09-12 20:43:08.944 | INFO     | services.sepa_scanner:run_sepa_scan:580 - SEPA scan: Fetched charts for 5/5 stocks
+2026-09-12 20:43:10.660 | INFO     | services.swing_scanner:run_swing_scan:638 - Starting Master Swing Trader scan...
+2026-09-12 20:43:10.795 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:43:10.810 | INFO     | services.swing_scanner:run_swing_scan:646 - Swing scan: fetched 0 live quotes
+2026-09-12 20:43:13.618 | INFO     | services.swing_scanner:run_swing_scan:655 - Swing scan: 18 stocks analyzed
+2026-09-12 20:43:13.635 | INFO     | services.swing_scanner:run_swing_scan:667 - Swing scan: Returning top 5 stocks out of 18 analyzed
+2026-09-12 20:43:15.514 | INFO     | services.swing_scanner:run_swing_scan:681 - Swing scan: Fetched charts for 5/5 stocks
+2026-09-12 20:43:19.318 | INFO     | services.short_term_scanner:run_short_term_scan:328 - Starting Short Term scan...
+2026-09-12 20:43:45.209 | INFO     | services.short_term_scanner:_analyse_stock:249 - HDFCBANK - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': True, 'cond5_small_lower_wick': False, 'lower_wick': 13.51, 'lower_wick_pct': 49.84, 'candle_range': 27.1}
+2026-09-12 20:43:45.226 | INFO     | services.short_term_scanner:_analyse_stock:250 - HDFCBANK - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': False, 'cond5_small_upper_wick': False, 'upper_wick': 13.59, 'upper_wick_pct': 50.16, 'candle_range': 27.1}
+2026-09-12 20:43:49.048 | INFO     | services.short_term_scanner:_analyse_stock:249 - ICICIBANK - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 28.0, 'lower_wick_pct': 100.0, 'candle_range': 28.0}
+2026-09-12 20:43:49.048 | INFO     | services.short_term_scanner:_analyse_stock:250 - ICICIBANK - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': True, 'upper_wick': 0.0, 'upper_wick_pct': 0.0, 'candle_range': 28.0}
+2026-09-12 20:43:52.730 | INFO     | services.short_term_scanner:_analyse_stock:249 - INFY - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 25.78, 'lower_wick_pct': 100.0, 'candle_range': 25.78}
+2026-09-12 20:43:52.730 | INFO     | services.short_term_scanner:_analyse_stock:250 - INFY - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': True, 'upper_wick': 0.0, 'upper_wick_pct': 0.0, 'candle_range': 25.78}
+2026-09-12 20:44:13.794 | INFO     | services.short_term_scanner:_analyse_stock:249 - RELIANCE - BUY debug: {'cond1_prev_open_lt_st': False, 'cond2_prev_close_gt_st': True, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 32.25, 'lower_wick_pct': 100.0, 'candle_range': 32.25}
+2026-09-12 20:44:13.794 | INFO     | services.short_term_scanner:_analyse_stock:250 - RELIANCE - SELL debug: {'cond1_prev_open_gt_st': True, 'cond2_prev_close_lt_st': False, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': True, 'upper_wick': 0.0, 'upper_wick_pct': 0.0, 'candle_range': 32.25}
+2026-09-12 20:44:21.951 | INFO     | services.short_term_scanner:_analyse_stock:249 - TCS - BUY debug: {'cond1_prev_open_lt_st': True, 'cond2_prev_close_gt_st': False, 'cond3_curr_open_gt_st': False, 'cond4_bullish_candle': False, 'cond5_small_lower_wick': False, 'lower_wick': 43.27, 'lower_wick_pct': 91.87, 'candle_range': 47.1}
+2026-09-12 20:44:21.951 | INFO     | services.short_term_scanner:_analyse_stock:250 - TCS - SELL debug: {'cond1_prev_open_gt_st': False, 'cond2_prev_close_lt_st': True, 'cond3_curr_open_lt_st': True, 'cond4_bearish_candle': True, 'cond5_small_upper_wick': True, 'upper_wick': 3.83, 'upper_wick_pct': 8.13, 'candle_range': 47.1}
+2026-09-12 20:44:29.518 | INFO     | services.short_term_scanner:run_short_term_scan:340 - Short term scan: 0 signals found
+2026-09-12 20:44:29.549 | INFO     | services.backtest:get_backtest_results:171 - Fetching backtest results for last 30 days, scanner: All
+2026-09-12 20:44:29.565 | INFO     | services.backtest:get_backtest_results:189 - Found 45 signals to backtest
+2026-09-12 20:44:29.924 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:29.955 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:29.987 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.018 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.049 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.173 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.263 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.290 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.337 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.383 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.946 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:30.977 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.024 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.039 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.071 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.086 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.164 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.196 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.211 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.321 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.492 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.524 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.860 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.860 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.906 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:31.954 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.095 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.095 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.157 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.365 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.413 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.429 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.460 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.491 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.522 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.553 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.553 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.585 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.741 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:32.876 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:33.093 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:33.186 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:33.233 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:33.249 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:33.280 | ERROR    | api.upstox_client:get:80 - HTTP 401 for /market-quote/quotes: {"status":"error","errors":[{"errorCode":"UDAPI100050","message":"Invalid token used to access API","propertyPath":null,"invalidValue":null,"error_code":"UDAPI100050","property_path":null,"invalid_val
+2026-09-12 20:44:33.414 | INFO     | services.backtest:get_backtest_results:210 - Backtest complete: 45 signals analyzed
