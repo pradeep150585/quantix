@@ -1273,7 +1273,17 @@ def render_intraday_tab():
     st.markdown("**Strategy:** 10-min Heikin-Ashi + EMA crossover signals")
     
     if not is_market_open:
-        st.info("📊 Market is closed. Showing analysis based on EOD (End of Day) data. Live signals will appear during market hours (9:35 AM onwards).")
+        st.warning("""
+        ⚠️ **Market is closed** - Showing analysis based on EOD (End of Day) data.
+        
+        **Note:** EOD signals may differ from Chartink's live intraday signals because:
+        - Chartink shows **live 10-minute candles** from today's trading session
+        - Our EOD mode uses **daily candles** from previous trading day
+        - Different timeframes = different signals
+        
+        **For matching Chartink results:** Run this scanner during market hours (Mon-Fri, 9:35 AM onwards) 
+        when both will analyze the same live 10-minute data.
+        """)
     
     # Prepare display dataframe
     display_df = df[[
